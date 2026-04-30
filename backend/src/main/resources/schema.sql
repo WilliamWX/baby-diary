@@ -1,4 +1,4 @@
--- 养娃日记数据库初始化脚本
+-- 养娃宝数据库初始化脚本
 
 CREATE DATABASE IF NOT EXISTS baby_diary DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE baby_diary;
@@ -32,15 +32,16 @@ CREATE TABLE diary (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     baby_id BIGINT,
-    title VARCHAR(200) NOT NULL,
     content LONGTEXT,
     visibility TINYINT DEFAULT 1 COMMENT '0私密 1公开 2仅好友',
     view_count INT DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    record_date DATE NOT NULL COMMENT '记录事件日期',
     INDEX idx_diary_user (user_id),
     INDEX idx_diary_baby (baby_id),
-    INDEX idx_diary_created (created_at)
+    INDEX idx_diary_created (created_at),
+    INDEX idx_diary_record (record_date)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 日记图片表

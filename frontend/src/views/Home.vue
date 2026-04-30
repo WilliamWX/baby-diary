@@ -38,7 +38,6 @@ onMounted(() => {
             </div>
             <span class="time">{{ item.createdAt?.slice(0, 10) }}</span>
           </div>
-          <h3 class="card-title">{{ item.title }}</h3>
           <p class="card-preview">{{ item.content?.replace(/<[^>]+>/g, '').slice(0, 150) }}</p>
           <div class="card-footer">
             <span><el-icon><View /></el-icon> {{ item.viewCount }}</span>

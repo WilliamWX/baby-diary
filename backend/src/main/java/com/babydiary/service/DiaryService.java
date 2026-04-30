@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.time.LocalDate;
 import java.util.stream.Collectors;
 
 @Service
@@ -30,12 +31,15 @@ public class DiaryService {
         Diary diary = new Diary();
         diary.setUserId(userId);
         diary.setBabyId(dto.getBabyId());
-        diary.setTitle(dto.getTitle());
         diary.setContent(dto.getContent());
         diary.setVisibility(dto.getVisibility() != null ? dto.getVisibility() : 1);
+        diary.setRecordDate(dto.getRecordDate() != null ? dto.getRecordDate() : LocalDate.now());
         diaryMapper.insert(diary);
 
         if (dto.getImages() != null && !dto.getImages().isEmpty()) {
+            if (dto.getImages().size() > 9) {
+                return Result.error("最多上传9张照片");
+            }
             for (int i = 0; i < dto.getImages().size(); i++) {
                 DiaryImage img = new DiaryImage();
                 img.setDiaryId(diary.getId());
@@ -109,11 +113,11 @@ public class DiaryService {
                 .authorAvatar(user != null ? user.getAvatar() : null)
                 .babyId(diary.getBabyId())
                 .babyName(babyName)
-                .title(diary.getTitle())
                 .content(diary.getContent())
                 .visibility(diary.getVisibility())
                 .viewCount(diary.getViewCount())
                 .images(images)
+                .recordDate(diary.getRecordDate())
                 .createdAt(diary.getCreatedAt())
                 .build();
     }

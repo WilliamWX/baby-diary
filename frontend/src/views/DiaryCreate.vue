@@ -1,31 +1,28 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { createDiary, uploadImage } from '../api/diary'
-import { getBabyList } from '../api/baby'
 
 const router = useRouter()
 
+const today = new Date().toISOString().slice(0, 10)
+
 const form = ref({
-  title: '',
   content: '',
-  babyId: null,
-  visibility: 1
+  visibility: 1,
+  recordDate: today
 })
-const babies = ref([])
+const MAX_IMAGES = 9
 const images = ref([])
 const uploading = ref(false)
 const submitting = ref(false)
 
-onMounted(async () => {
-  try {
-    const res = await getBabyList()
-    babies.value = res.data || []
-  } catch (e) { /* ignored */ }
-})
-
 async function handleUpload(file) {
+  if (images.value.length >= MAX_IMAGES) {
+    ElMessage.warning('最多上传9张照片')
+    return
+  }
   uploading.value = true
   try {
     const res = await uploadImage(file.raw)
@@ -42,10 +39,6 @@ function removeImage(index) {
 }
 
 async function handleSubmit() {
-  if (!form.value.title) {
-    ElMessage.warning('请输入标题')
-    return
-  }
   submitting.value = true
   try {
     const data = { ...form.value, images: images.value }
@@ -65,13 +58,13 @@ async function handleSubmit() {
     <el-card>
       <h2 class="page-title">写日记</h2>
       <el-form :model="form" label-width="80px">
-        <el-form-item label="标题">
-          <el-input v-model="form.title" placeholder="给日记取个标题吧" maxlength="200" show-word-limit />
-        </el-form-item>
-        <el-form-item label="关联宝宝">
-          <el-select v-model="form.babyId" placeholder="选择宝宝（可选）" clearable>
-            <el-option v-for="b in babies" :key="b.id" :label="b.name" :value="b.id" />
-          </el-select>
+        <el-form-item label="记录日期">
+          <el-date-picker
+            v-model="form.recordDate"
+            type="date"
+            placeholder="选择日期"
+            value-format="YYYY-MM-DD"
+            style="width: 100%" />
         </el-form-item>
         <el-form-item label="可见性">
           <el-radio-group v-model="form.visibility">
@@ -83,10 +76,12 @@ async function handleSubmit() {
           <el-input
             v-model="form.content"
             type="textarea"
-            :rows="12"
-            placeholder="记录宝宝的成长点滴...&#10;支持换行分段，图片会显示在文章末尾" />
+            :rows="10"
+            placeholder="记录宝宝的成长点滴...&#10;支持换行分段，图片会显示在文章末尾"
+            class="content-input" />
         </el-form-item>
         <el-form-item label="图片">
+          <div class="upload-hint">{{ images.length }}/{{ MAX_IMAGES }}</div>
           <div class="image-section">
             <div v-for="(img, idx) in images" :key="idx" class="image-item">
               <img :src="'http://localhost:9000' + img" class="preview-img" />
@@ -95,6 +90,7 @@ async function handleSubmit() {
               </el-button>
             </div>
             <el-upload
+              v-if="images.length < MAX_IMAGES"
               :auto-upload="false"
               :show-file-list="false"
               accept="image/*"
@@ -130,6 +126,11 @@ async function handleSubmit() {
   flex-wrap: wrap;
   gap: 10px;
 }
+.upload-hint {
+  font-size: 12px;
+  color: #999;
+  margin-bottom: 8px;
+}
 .image-item {
   position: relative;
   width: 100px;
@@ -156,6 +157,9 @@ async function handleSubmit() {
   justify-content: center;
   cursor: pointer;
   color: #ccc;
+}
+.content-input {
+  max-width: 480px;
 }
 .upload-btn:hover {
   border-color: #ff6b81;

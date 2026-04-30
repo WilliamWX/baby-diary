@@ -15,7 +15,7 @@ function handleLogout() {
   <el-container class="layout">
     <el-header class="header">
       <div class="header-left">
-        <router-link to="/" class="logo">养娃日记</router-link>
+        <router-link to="/" class="logo">养娃宝</router-link>
         <el-menu mode="horizontal" :default-active="$route.path" router>
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/posts">经验分享</el-menu-item>

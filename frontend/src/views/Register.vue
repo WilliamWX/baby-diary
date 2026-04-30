@@ -35,7 +35,7 @@ async function handleRegister() {
 <template>
   <div class="auth-page">
     <el-card class="auth-card">
-      <h2 class="title">注册养娃日记</h2>
+      <h2 class="title">注册养娃宝</h2>
       <el-form :model="form" label-width="0">
         <el-form-item>
           <el-input v-model="form.username" placeholder="用户名" prefix-icon="User" />

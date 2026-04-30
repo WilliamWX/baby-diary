@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getDiaryDetail, deleteDiary } from '../api/diary'
@@ -8,9 +8,12 @@ import { useAuthStore } from '../stores/auth'
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
+const baseUrl = 'http://localhost:9000'
 
 const diary = ref(null)
 const loading = ref(true)
+
+const previewList = computed(() => diary.value?.images?.map(i => baseUrl + i) || [])
 
 onMounted(async () => {
   try {
@@ -43,13 +46,12 @@ async function handleDelete() {
   <div class="diary-detail" v-loading="loading">
     <el-card v-if="diary">
       <div class="diary-header">
-        <h1 class="title">{{ diary.title }}</h1>
         <div class="meta">
           <div class="author">
             <el-avatar :size="40" icon="UserFilled" />
             <div>
               <div class="author-name">{{ diary.authorName }}</div>
-              <div class="time">{{ diary.createdAt?.slice(0, 10) }} {{ diary.babyName ? '· ' + diary.babyName : '' }}</div>
+              <div class="time">{{ diary.recordDate || diary.createdAt?.slice(0, 10) }} {{ diary.babyName ? '· ' + diary.babyName : '' }}</div>
             </div>
           </div>
           <div class="actions">
@@ -60,13 +62,15 @@ async function handleDelete() {
         <el-tag v-if="diary.visibility === 0" type="warning" size="small">私密</el-tag>
       </div>
       <div class="content" v-html="diary.content?.replace(/\n/g, '<br>')" />
-      <div v-if="diary.images?.length" class="images">
-        <el-image
-          v-for="(img, idx) in diary.images"
-          :key="idx"
-          :src="'http://localhost:9000' + img"
-          :preview-src-list="diary.images.map(i => 'http://localhost:9000' + i)"
-          class="detail-image" />
+      <div v-if="diary.images?.length" class="moments-grid" :class="'grid-' + diary.images.length">
+        <div v-for="(img, idx) in diary.images" :key="idx" class="grid-item">
+          <el-image
+            :src="baseUrl + img"
+            :preview-src-list="previewList"
+            :initial-index="idx"
+            fit="cover"
+            class="grid-image" />
+        </div>
       </div>
     </el-card>
   </div>
@@ -77,11 +81,6 @@ async function handleDelete() {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px 0;
-}
-.title {
-  font-size: 26px;
-  color: #222;
-  margin-bottom: 16px;
 }
 .meta {
   display: flex;
@@ -124,15 +123,81 @@ async function handleDelete() {
   white-space: pre-wrap;
   margin-bottom: 24px;
 }
-.images {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+
+/* 朋友圈网格 */
+.moments-grid {
+  display: grid;
+  gap: 4px;
+  margin-top: 16px;
 }
-.detail-image {
-  width: 200px;
-  height: 200px;
+.grid-item {
+  overflow: hidden;
+  border-radius: 4px;
+}
+.grid-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.grid-image :deep(img) {
   object-fit: cover;
-  border-radius: 8px;
+}
+
+/* 1张：单图大图 */
+.grid-1 {
+  grid-template-columns: 1fr;
+  max-width: 400px;
+}
+.grid-1 .grid-item {
+  aspect-ratio: 4 / 3;
+}
+
+/* 2张：左右等分 */
+.grid-2 {
+  grid-template-columns: 1fr 1fr;
+  max-width: 400px;
+}
+.grid-2 .grid-item {
+  aspect-ratio: 1 / 1;
+}
+
+/* 3张：左1大 右2小 */
+.grid-3 {
+  grid-template-columns: 1fr 1fr;
+  max-width: 400px;
+}
+.grid-3 .grid-item:first-child {
+  grid-row: 1 / 3;
+  aspect-ratio: auto;
+}
+.grid-3 .grid-item {
+  aspect-ratio: 1 / 1;
+}
+
+/* 4张：2x2 */
+.grid-4 {
+  grid-template-columns: 1fr 1fr;
+  max-width: 400px;
+}
+.grid-4 .grid-item {
+  aspect-ratio: 1 / 1;
+}
+
+/* 5-6张：3列 */
+.grid-5, .grid-6 {
+  grid-template-columns: 1fr 1fr 1fr;
+  max-width: 400px;
+}
+.grid-5 .grid-item, .grid-6 .grid-item {
+  aspect-ratio: 1 / 1;
+}
+
+/* 7-9张：3列 */
+.grid-7, .grid-8, .grid-9 {
+  grid-template-columns: 1fr 1fr 1fr;
+  max-width: 400px;
+}
+.grid-7 .grid-item, .grid-8 .grid-item, .grid-9 .grid-item {
+  aspect-ratio: 1 / 1;
 }
 </style>
