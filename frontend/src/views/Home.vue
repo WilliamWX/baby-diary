@@ -33,7 +33,7 @@ onMounted(() => {
         <el-card v-for="item in diaryList" :key="item.id" class="diary-card" @click="$router.push(`/diary/${item.id}`)">
           <div class="card-header">
             <div class="author">
-              <el-avatar :size="36" icon="UserFilled" />
+              <el-avatar :size="36" :src="item.authorAvatar ? 'http://localhost:9000' + item.authorAvatar : undefined" icon="UserFilled" />
               <span>{{ item.authorName }}</span>
             </div>
             <span class="time">{{ item.createdAt?.slice(0, 10) }}</span>

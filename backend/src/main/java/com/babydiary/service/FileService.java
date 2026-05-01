@@ -19,9 +19,13 @@ public class FileService {
     private String bucket;
 
     public String upload(MultipartFile file) {
+        return upload(file, "diary");
+    }
+
+    public String upload(MultipartFile file, String folder) {
         try {
             String ext = getExtension(file.getOriginalFilename());
-            String filename = "diary/" + UUID.randomUUID() + ext;
+            String filename = folder + "/" + UUID.randomUUID() + ext;
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucket)
                     .object(filename)

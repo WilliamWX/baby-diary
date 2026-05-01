@@ -27,7 +27,8 @@ const routes = [
       { path: 'post/create', name: 'PostCreate', component: () => import('../views/PostCreate.vue') },
       { path: 'post/:id', name: 'PostDetail', component: () => import('../views/PostDetail.vue') },
       { path: 'user/:id', name: 'UserProfile', component: () => import('../views/UserProfile.vue') },
-      { path: 'profile', name: 'Profile', component: () => import('../views/Profile.vue') }
+      { path: 'profile', name: 'Profile', component: () => import('../views/Profile.vue') },
+      { path: 'ai-doctor', name: 'AiDoctor', component: () => import('../views/AiDoctor.vue') }
     ]
   }
 ]

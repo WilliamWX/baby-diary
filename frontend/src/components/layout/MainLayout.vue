@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import Logo from '../Logo.vue'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -15,17 +16,18 @@ function handleLogout() {
   <el-container class="layout">
     <el-header class="header">
       <div class="header-left">
-        <router-link to="/" class="logo">养娃宝</router-link>
+        <router-link to="/" class="logo-link"><Logo :size="36" /></router-link>
         <el-menu mode="horizontal" :default-active="$route.path" router>
           <el-menu-item index="/">首页</el-menu-item>
           <el-menu-item index="/posts">经验分享</el-menu-item>
           <el-menu-item index="/diary/create">写日记</el-menu-item>
+          <el-menu-item index="/ai-doctor">AI 医生</el-menu-item>
         </el-menu>
       </div>
       <div class="header-right">
         <el-dropdown v-if="auth.isLoggedIn">
           <span class="user-dropdown">
-            <el-avatar :size="32" icon="UserFilled" />
+            <el-avatar :size="32" :src="auth.user?.avatar ? 'http://localhost:9000' + auth.user.avatar : undefined" icon="UserFilled" />
             <span class="username">{{ auth.user?.username }}</span>
           </span>
           <template #dropdown>
@@ -64,10 +66,7 @@ function handleLogout() {
   align-items: center;
   gap: 30px;
 }
-.logo {
-  font-size: 20px;
-  font-weight: bold;
-  color: #ff6b81;
+.logo-link {
   text-decoration: none;
 }
 .header-right {

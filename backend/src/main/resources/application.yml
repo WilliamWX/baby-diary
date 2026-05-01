@@ -34,3 +34,8 @@ minio:
   access-key: minioadmin
   secret-key: minioadmin
   bucket: baby-diary
+
+deepseek:
+  api-key: sk-your-api-key-here
+  base-url: https://api.deepseek.com
+  model: deepseek-chat

@@ -48,7 +48,7 @@ async function handleDelete() {
       <div class="diary-header">
         <div class="meta">
           <div class="author">
-            <el-avatar :size="40" icon="UserFilled" />
+            <el-avatar :size="40" :src="diary.authorAvatar ? 'http://localhost:9000' + diary.authorAvatar : undefined" icon="UserFilled" />
             <div>
               <div class="author-name">{{ diary.authorName }}</div>
               <div class="time">{{ diary.recordDate || diary.createdAt?.slice(0, 10) }} {{ diary.babyName ? '· ' + diary.babyName : '' }}</div>
