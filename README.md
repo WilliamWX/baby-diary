@@ -9,7 +9,7 @@
 
 The birth of my baby changed everything.
 
-From the first time I held that tiny, soft little body, to watching the first roll-over, first crawl, first wobbly steps toward me... every moment was too precious to let fade. As a programmer, I'm used to solving problems with code — so **BabyDiary** was born, a community built for capturing a child's growth journey.
+From the first time I held that tiny, soft body in my arms, to watching the first roll-over, first crawl, first wobbly steps toward me... every moment was too precious to let slip away. As a programmer, I solve problems with code — so **BabyDiary** was born: a community for capturing every step of a child's growth journey.
 
 No business plan, no product roadmap — just a new father's **endless love** for his baby, and an irresistible urge to share that joy with the world.
 
@@ -24,7 +24,7 @@ No business plan, no product roadmap — just a new father's **endless love** fo
 | Diary | Photo-rich daily journal, up to 9 images, presented in a social-media grid layout |
 | Growth Tracker | Height & weight charts, feeding log, sleep log, developmental milestones |
 | Community | Posts with likes, comments, bookmarks, and follow system |
-| Baby Profile | Multi-child management with avatar, birthday, gender |
+| Baby Profile | Support for multiple children, with avatar, birthday, and gender |
 | AI Doctor | Powered by DeepSeek — ask pediatric questions publicly or anonymously |
 | Profile | Avatar upload, editable bio, activity stats |
 
@@ -105,7 +105,7 @@ baby-diary/
 
 ## Contribute
 
-BabyDiary is far from perfect — features need enriching, UI needs polishing, code needs refining. If you're also a parent who codes, or simply find this project interesting:
+BabyDiary is far from perfect — there are features to add, rough edges to smooth, and plenty of code to clean up. If you're a fellow parent who also writes code, or just find this project interesting:
 
 - ⭐ Star the repo to help more parents discover it
 - 🐛 Submit an Issue for bugs or feature suggestions
