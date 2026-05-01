@@ -66,7 +66,7 @@ async function handleAsk(anonymous) {
         @keyup.enter.exact.prevent="handleAsk(false)" />
       <div class="btn-row">
         <el-button type="primary" :loading="loading" @click="handleAsk(false)">
-          提交提问
+          提交
         </el-button>
         <el-button :loading="loading" @click="handleAsk(true)">
           匿名提交
