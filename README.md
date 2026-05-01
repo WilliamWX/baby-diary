@@ -1,7 +1,6 @@
 # 养娃宝 — 记录 · 分享 · 成长
 
 <p align="center">
-  <img src="https://img.shields.io/badge/代码-AI%20生成-blue?style=flat-square" alt="AI Generated">
   <img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License">
   <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome">
 </p>
@@ -16,13 +15,6 @@
 
 > 代码会老去，框架会过时，但那些关于宝宝的记忆，值得被温柔地珍藏。
 
----
-
-## AI 驱动的开源实验
-
-值得一提的是，这个项目的所有代码 **100% 由 AI（Claude Code）生成**。从后端 Java 到前端 Vue，从数据库设计到 UI 布局，全部通过自然语言指令由 AI 自动编写完成，无人工编码介入。这是一次关于"AI 辅助编程能力边界"的探索实验，也希望它能启发更多开发者拥抱 AI。
-
----
 
 ## 功能概览
 
