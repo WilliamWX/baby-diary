@@ -3,8 +3,10 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { createDiary, uploadImage } from '../api/diary'
+import { BASE_URL } from '../utils/config'
 
 const router = useRouter()
+const baseUrl = BASE_URL
 
 const today = new Date().toISOString().slice(0, 10)
 
@@ -84,7 +86,7 @@ async function handleSubmit() {
           <div class="upload-hint">{{ images.length }}/{{ MAX_IMAGES }}</div>
           <div class="image-section">
             <div v-for="(img, idx) in images" :key="idx" class="image-item">
-              <img :src="'http://localhost:9000' + img" class="preview-img" />
+              <img :src="baseUrl + img" class="preview-img" />
               <el-button type="danger" circle size="small" class="remove-btn" @click="removeImage(idx)">
                 <el-icon><Delete /></el-icon>
               </el-button>

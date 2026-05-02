@@ -1,0 +1,62 @@
+/* 全局主题变量 */
+:root {
+  --primary: #ff6b81;
+  --primary-light: #ff9a9e;
+  --primary-lighter: #fff5f7;
+  --primary-dark: #d81b60;
+  --bg: #fafafa;
+  --card-bg: #ffffff;
+  --text: #333333;
+  --text-secondary: #666666;
+  --text-muted: #999999;
+  --border: #eeeeee;
+  --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 全局背景 */
+body {
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+/* Element Plus 主题覆盖 */
+:root {
+  --el-color-primary: #ff6b81;
+  --el-color-primary-light-3: #ff9a9e;
+  --el-color-primary-light-5: #ffb3b8;
+  --el-color-primary-light-7: #ffcdd2;
+  --el-color-primary-light-9: #ffe6e9;
+  --el-color-primary-dark-2: #e85a6e;
+}
+
+/* 页面切换动画 */
+.page-enter-active {
+  animation: pageFadeIn 0.25s ease;
+}
+.page-leave-active {
+  animation: pageFadeIn 0.15s ease reverse;
+}
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 卡片通用悬停 */
+.el-card.is-hover-shadow:hover {
+  transform: translateY(-1px);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .el-header {
+    padding: 0 12px !important;
+    height: 52px !important;
+  }
+  .el-main {
+    padding: 12px !important;
+  }
+  .header-center {
+    display: none;
+  }
+}

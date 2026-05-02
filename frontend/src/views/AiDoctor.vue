@@ -1,12 +1,16 @@
 <script setup>
-import { ref, nextTick, watch } from 'vue'
+import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { askDoctor } from '../api/aidoctor'
+import { askDoctor, getHistory } from '../api/aidoctor'
 
 const question = ref('')
 const loading = ref(false)
 const chatList = ref([])
 const chatEnd = ref(null)
+
+// history
+const historyList = ref([])
+const historyLoading = ref(false)
 
 function scrollBottom() {
   nextTick(() => chatEnd.value?.scrollIntoView({ behavior: 'smooth' }))
@@ -31,46 +35,88 @@ async function handleAsk(anonymous) {
     loading.value = false
   }
 }
+
+async function loadHistory() {
+  historyLoading.value = true
+  try {
+    const res = await getHistory(1, 100)
+    historyList.value = res.data.records || []
+  } catch (e) { /* ignored */ }
+  finally { historyLoading.value = false }
+}
+
+function loadConversation(item) {
+  chatList.value = [{ question: item.question, answer: item.answer, anonymous: item.anonymous === 1 }]
+  scrollBottom()
+}
+
+onMounted(() => {
+  loadHistory()
+})
 </script>
 
 <template>
   <div class="ai-doctor">
-    <div class="chat-header">
-      <h2>AI 医生</h2>
-      <p class="desc">儿科育儿问题随时问</p>
-    </div>
-
-    <div class="chat-body" v-if="chatList.length">
-      <div v-for="(item, idx) in chatList" :key="idx" class="qa-item">
-        <div class="question-bubble">
-          <div class="q-label">
-            {{ item.anonymous ? '匿名用户' : '我' }}
-          </div>
-          <div class="q-text">{{ item.question }}</div>
+    <div class="ai-layout">
+      <!-- History Sidebar -->
+      <div class="history-sidebar">
+        <div class="sidebar-header">
+          <h3>历史记录</h3>
         </div>
-        <div class="answer-bubble">
-          <div class="a-label">AI 医生</div>
-          <div class="a-text">{{ item.answer }}</div>
+        <div v-loading="historyLoading" class="sidebar-body">
+          <div v-if="historyList.length === 0" class="history-empty">暂无记录</div>
+          <div
+            v-for="h in historyList"
+            :key="h.id"
+            class="history-item"
+            @click="loadConversation(h)"
+          >
+            <div class="history-q">{{ h.question.slice(0, 30) }}{{ h.question.length > 30 ? '...' : '' }}</div>
+            <div class="history-time">{{ h.createdAt?.slice(0, 10) }}</div>
+          </div>
         </div>
       </div>
-      <div ref="chatEnd" />
-    </div>
 
-    <div class="chat-input">
-      <el-input
-        v-model="question"
-        type="textarea"
-        :rows="3"
-        placeholder="输入宝宝的健康、喂养、睡眠等问题..."
-        :disabled="loading"
-        @keyup.enter.exact.prevent="handleAsk(false)" />
-      <div class="btn-row">
-        <el-button type="primary" :loading="loading" @click="handleAsk(false)">
-          提交
-        </el-button>
-        <el-button :loading="loading" @click="handleAsk(true)">
-          匿名提交
-        </el-button>
+      <!-- Chat Panel -->
+      <div class="chat-panel">
+        <div class="chat-header">
+          <h2>AI 医生</h2>
+          <p class="desc">儿科育儿问题随时问</p>
+        </div>
+
+        <div class="chat-body" v-if="chatList.length">
+          <div v-for="(item, idx) in chatList" :key="idx" class="qa-item">
+            <div class="question-bubble">
+              <div class="q-label">
+                {{ item.anonymous ? '匿名用户' : '我' }}
+              </div>
+              <div class="q-text">{{ item.question }}</div>
+            </div>
+            <div class="answer-bubble">
+              <div class="a-label">AI 医生</div>
+              <div class="a-text">{{ item.answer }}</div>
+            </div>
+          </div>
+          <div ref="chatEnd" />
+        </div>
+
+        <div class="chat-input">
+          <el-input
+            v-model="question"
+            type="textarea"
+            :rows="3"
+            placeholder="输入宝宝的健康、喂养、睡眠等问题..."
+            :disabled="loading"
+            @keyup.enter.exact.prevent="handleAsk(false)" />
+          <div class="btn-row">
+            <el-button type="primary" :loading="loading" @click="handleAsk(false)">
+              提交
+            </el-button>
+            <el-button :loading="loading" @click="handleAsk(true)">
+              匿名提交
+            </el-button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -78,9 +124,61 @@ async function handleAsk(anonymous) {
 
 <style scoped>
 .ai-doctor {
-  max-width: 720px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 20px 0;
+}
+.ai-layout {
+  display: flex;
+  gap: 24px;
+  min-height: 70vh;
+}
+
+/* History Sidebar */
+.history-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid #f0f0f0;
+  padding-right: 16px;
+}
+.sidebar-header h3 {
+  font-size: 16px;
+  color: #333;
+  margin: 0 0 12px;
+}
+.sidebar-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.history-item {
+  padding: 10px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 4px;
+  transition: background 0.2s;
+}
+.history-item:hover { background: #fafafa; }
+.history-q {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 2px;
+}
+.history-time {
+  font-size: 11px;
+  color: #ccc;
+}
+.history-empty {
+  font-size: 13px;
+  color: #ccc;
+  text-align: center;
+  padding: 30px 0;
+}
+
+/* Chat Panel */
+.chat-panel {
+  flex: 1;
+  min-width: 0;
 }
 .chat-header {
   text-align: center;

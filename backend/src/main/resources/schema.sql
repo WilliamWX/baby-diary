@@ -158,3 +158,30 @@ CREATE TABLE follow (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uk_follow (follower_id, following_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 通知表
+CREATE TABLE notification (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL COMMENT '接收者',
+    actor_id BIGINT NOT NULL COMMENT '触发者',
+    type VARCHAR(20) NOT NULL COMMENT 'like/comment/follow',
+    target_type VARCHAR(20) COMMENT 'diary/post',
+    target_id BIGINT,
+    content VARCHAR(500),
+    is_read TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_notify_user (user_id, is_read),
+    INDEX idx_notify_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- AI医生问答历史表
+CREATE TABLE ai_chat_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    question TEXT NOT NULL,
+    answer TEXT NOT NULL,
+    anonymous TINYINT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_chat_user (user_id),
+    INDEX idx_chat_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

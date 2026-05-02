@@ -33,19 +33,20 @@ public class DiaryController {
     public Result<PageResult<DiaryVO>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long babyId,
+            @RequestParam(required = false) String keyword,
             Authentication auth) {
-        return diaryService.list(page, size, (Long) auth.getPrincipal());
+        return diaryService.list(page, size, (Long) auth.getPrincipal(), babyId, keyword);
     }
 
     @GetMapping("/{id}")
-    public Result<DiaryVO> detail(@PathVariable Long id) {
-        return diaryService.detail(id);
+    public Result<DiaryVO> detail(@PathVariable Long id, Authentication auth) {
+        return diaryService.detail(id, (Long) auth.getPrincipal());
     }
 
     @PutMapping("/{id}")
     public Result<Diary> update(@PathVariable Long id, @Valid @RequestBody DiaryDTO dto, Authentication auth) {
-        diaryService.delete(id, (Long) auth.getPrincipal());
-        return diaryService.create(dto, (Long) auth.getPrincipal());
+        return diaryService.update(id, dto, (Long) auth.getPrincipal());
     }
 
     @DeleteMapping("/{id}")

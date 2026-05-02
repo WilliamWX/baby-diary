@@ -3,8 +3,10 @@ import { onMounted, ref, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAuthStore } from '../stores/auth'
 import { uploadAvatar, updateProfile } from '../api/user'
+import { BASE_URL } from '../utils/config'
 
 const auth = useAuthStore()
+const baseUrl = BASE_URL
 const uploading = ref(false)
 const editingBio = ref(false)
 const bioDraft = ref('')
@@ -62,7 +64,7 @@ function triggerUpload() {
     <el-card>
       <div class="profile-header">
         <div class="avatar-wrap" @click="triggerUpload" title="点击更换头像">
-          <el-avatar v-if="auth.user?.avatar" :size="80" :src="'http://localhost:9000' + auth.user.avatar" />
+          <el-avatar v-if="auth.user?.avatar" :size="80" :src="baseUrl + auth.user.avatar" />
           <el-avatar v-else :size="80" icon="UserFilled" />
           <div class="avatar-overlay" :class="{ uploading }">
             <span v-if="uploading">上传中...</span>

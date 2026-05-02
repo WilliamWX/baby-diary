@@ -8,6 +8,10 @@ export function getBabyList() {
   return request.get('/baby')
 }
 
+export function getBaby(id) {
+  return request.get(`/baby/${id}`)
+}
+
 export function updateBaby(id, data) {
   return request.put(`/baby/${id}`, data)
 }

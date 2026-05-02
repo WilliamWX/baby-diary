@@ -28,6 +28,15 @@ public class BabyController {
         return babyService.list((Long) auth.getPrincipal());
     }
 
+    @GetMapping("/{id}")
+    public Result<Baby> detail(@PathVariable Long id) {
+        Baby baby = babyService.getById(id);
+        if (baby == null) {
+            return Result.error("宝宝不存在");
+        }
+        return Result.ok(baby);
+    }
+
     @PutMapping("/{id}")
     public Result<Baby> update(@PathVariable Long id, @Valid @RequestBody BabyDTO dto, Authentication auth) {
         return babyService.update(id, dto, (Long) auth.getPrincipal());

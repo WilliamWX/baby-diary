@@ -4,11 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getDiaryDetail, deleteDiary } from '../api/diary'
 import { useAuthStore } from '../stores/auth'
+import { BASE_URL } from '../utils/config'
 
 const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
-const baseUrl = 'http://localhost:9000'
+const baseUrl = BASE_URL
 
 const diary = ref(null)
 const loading = ref(true)
@@ -48,7 +49,7 @@ async function handleDelete() {
       <div class="diary-header">
         <div class="meta">
           <div class="author">
-            <el-avatar :size="40" :src="diary.authorAvatar ? 'http://localhost:9000' + diary.authorAvatar : undefined" icon="UserFilled" />
+            <el-avatar :size="40" :src="diary.authorAvatar ? baseUrl + diary.authorAvatar : undefined" icon="UserFilled" />
             <div>
               <div class="author-name">{{ diary.authorName }}</div>
               <div class="time">{{ diary.recordDate || diary.createdAt?.slice(0, 10) }} {{ diary.babyName ? '· ' + diary.babyName : '' }}</div>
@@ -61,7 +62,7 @@ async function handleDelete() {
         </div>
         <el-tag v-if="diary.visibility === 0" type="warning" size="small">私密</el-tag>
       </div>
-      <div class="content" v-html="diary.content?.replace(/\n/g, '<br>')" />
+      <div class="content">{{ diary.content }}</div>
       <div v-if="diary.images?.length" class="moments-grid" :class="'grid-' + diary.images.length">
         <div v-for="(img, idx) in diary.images" :key="idx" class="grid-item">
           <el-image

@@ -25,8 +25,9 @@ public class PostController {
     public Result<PageResult<PostVO>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String category) {
-        return postService.list(page, size, category);
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) String keyword) {
+        return postService.list(page, size, category, keyword);
     }
 
     @GetMapping("/{id}")

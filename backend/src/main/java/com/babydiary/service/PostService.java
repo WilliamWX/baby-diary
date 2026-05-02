@@ -24,6 +24,7 @@ public class PostService {
     private final CommentMapper commentMapper;
     private final BookmarkMapper bookmarkMapper;
     private final FollowMapper followMapper;
+    private final InteractService interactService;
 
     public Result<Post> create(Post post, Long userId) {
         post.setUserId(userId);
@@ -31,11 +32,14 @@ public class PostService {
         return Result.ok(post);
     }
 
-    public Result<PageResult<PostVO>> list(int page, int size, String category) {
+    public Result<PageResult<PostVO>> list(int page, int size, String category, String keyword) {
         LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<Post>()
                 .orderByDesc(Post::getCreatedAt);
         if (category != null && !category.isEmpty()) {
             wrapper.eq(Post::getCategory, category);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.and(w -> w.like(Post::getTitle, keyword).or().like(Post::getContent, keyword));
         }
         IPage<Post> pageObj = postMapper.selectPage(new Page<>(page, size), wrapper);
         List<PostVO> vos = pageObj.getRecords().stream().map(this::toVO).collect(Collectors.toList());
@@ -85,6 +89,8 @@ public class PostService {
                 .content(post.getContent())
                 .category(post.getCategory())
                 .viewCount(post.getViewCount())
+                .likeCount((int) interactService.likeCount("post", post.getId()))
+                .commentCount((int) interactService.commentCount("post", post.getId()))
                 .createdAt(post.getCreatedAt())
                 .build();
     }

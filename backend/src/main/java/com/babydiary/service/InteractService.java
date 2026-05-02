@@ -19,6 +19,9 @@ public class InteractService {
     private final BookmarkMapper bookmarkMapper;
     private final FollowMapper followMapper;
     private final UserMapper userMapper;
+    private final DiaryMapper diaryMapper;
+    private final PostMapper postMapper;
+    private final NotificationService notificationService;
 
     // 点赞/取消点赞
     public Result<String> toggleLike(Long userId, String targetType, Long targetId) {
@@ -35,6 +38,13 @@ public class InteractService {
         like.setTargetType(targetType);
         like.setTargetId(targetId);
         likeRecordMapper.insert(like);
+
+        // notify target owner
+        String content = "赞了你的" + ("diary".equals(targetType) ? "日记" : "帖子");
+        Long ownerId = getTargetOwnerId(targetType, targetId);
+        if (ownerId != null) {
+            notificationService.create(ownerId, userId, "like", targetType, targetId, content);
+        }
         return Result.ok("点赞成功");
     }
 
@@ -47,6 +57,13 @@ public class InteractService {
         comment.setParentId(parentId);
         comment.setContent(content);
         commentMapper.insert(comment);
+
+        // notify target owner
+        String notifyContent = "评论了你的" + ("diary".equals(targetType) ? "日记" : "帖子") + "：" + (content.length() > 30 ? content.substring(0, 30) + "..." : content);
+        Long ownerId = getTargetOwnerId(targetType, targetId);
+        if (ownerId != null) {
+            notificationService.create(ownerId, userId, "comment", targetType, targetId, notifyContent);
+        }
         return Result.ok(comment);
     }
 
@@ -104,6 +121,9 @@ public class InteractService {
         follow.setFollowerId(followerId);
         follow.setFollowingId(followingId);
         followMapper.insert(follow);
+
+        // notify
+        notificationService.create(followingId, followerId, "follow", null, null, "关注了你");
         return Result.ok("关注成功");
     }
 
@@ -141,5 +161,17 @@ public class InteractService {
         return commentMapper.selectCount(new LambdaQueryWrapper<Comment>()
                 .eq(Comment::getTargetType, targetType)
                 .eq(Comment::getTargetId, targetId));
+    }
+
+    private Long getTargetOwnerId(String targetType, Long targetId) {
+        if ("diary".equals(targetType)) {
+            Diary diary = diaryMapper.selectById(targetId);
+            return diary != null ? diary.getUserId() : null;
+        }
+        if ("post".equals(targetType)) {
+            Post post = postMapper.selectById(targetId);
+            return post != null ? post.getUserId() : null;
+        }
+        return null;
     }
 }

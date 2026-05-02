@@ -25,6 +25,7 @@ public class DiaryService {
     private final DiaryImageMapper diaryImageMapper;
     private final UserMapper userMapper;
     private final BabyMapper babyMapper;
+    private final InteractService interactService;
 
     @Transactional
     public Result<Diary> create(DiaryDTO dto, Long userId) {
@@ -51,13 +52,17 @@ public class DiaryService {
         return Result.ok(diary);
     }
 
-    public Result<PageResult<DiaryVO>> list(int page, int size, Long userId) {
-        IPage<Diary> pageObj = diaryMapper.selectPage(
-                new Page<>(page, size),
-                new LambdaQueryWrapper<Diary>()
-                        .eq(Diary::getVisibility, 1)
-                        .orderByDesc(Diary::getCreatedAt)
-        );
+    public Result<PageResult<DiaryVO>> list(int page, int size, Long userId, Long babyId, String keyword) {
+        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
+                .eq(Diary::getVisibility, 1)
+                .orderByDesc(Diary::getCreatedAt);
+        if (babyId != null) {
+            wrapper.eq(Diary::getBabyId, babyId);
+        }
+        if (keyword != null && !keyword.isEmpty()) {
+            wrapper.like(Diary::getContent, keyword);
+        }
+        IPage<Diary> pageObj = diaryMapper.selectPage(new Page<>(page, size), wrapper);
         List<DiaryVO> vos = pageObj.getRecords().stream()
                 .map(this::toVO)
                 .collect(Collectors.toList());
@@ -69,14 +74,48 @@ public class DiaryService {
         return Result.ok(result);
     }
 
-    public Result<DiaryVO> detail(Long id) {
+    public Result<DiaryVO> detail(Long id, Long userId) {
         Diary diary = diaryMapper.selectById(id);
         if (diary == null) {
             return Result.error("日记不存在");
         }
+        if (diary.getVisibility() != null && diary.getVisibility() == 0 && !diary.getUserId().equals(userId)) {
+            return Result.error(403, "无权访问");
+        }
         diary.setViewCount(diary.getViewCount() + 1);
         diaryMapper.updateById(diary);
         return Result.ok(toVO(diary));
+    }
+
+    @Transactional
+    public Result<Diary> update(Long id, DiaryDTO dto, Long userId) {
+        Diary diary = diaryMapper.selectById(id);
+        if (diary == null) {
+            return Result.error("日记不存在");
+        }
+        if (!diary.getUserId().equals(userId)) {
+            return Result.error(403, "无权操作");
+        }
+        diary.setContent(dto.getContent());
+        diary.setBabyId(dto.getBabyId());
+        diary.setVisibility(dto.getVisibility() != null ? dto.getVisibility() : 1);
+        diary.setRecordDate(dto.getRecordDate() != null ? dto.getRecordDate() : diary.getRecordDate());
+        diaryMapper.updateById(diary);
+
+        if (dto.getImages() != null) {
+            if (dto.getImages().size() > 9) {
+                return Result.error("最多上传9张照片");
+            }
+            diaryImageMapper.delete(new LambdaQueryWrapper<DiaryImage>().eq(DiaryImage::getDiaryId, id));
+            for (int i = 0; i < dto.getImages().size(); i++) {
+                DiaryImage img = new DiaryImage();
+                img.setDiaryId(id);
+                img.setUrl(dto.getImages().get(i));
+                img.setSort(i);
+                diaryImageMapper.insert(img);
+            }
+        }
+        return Result.ok(diary);
     }
 
     @Transactional
@@ -116,6 +155,8 @@ public class DiaryService {
                 .content(diary.getContent())
                 .visibility(diary.getVisibility())
                 .viewCount(diary.getViewCount())
+                .likeCount((int) interactService.likeCount("diary", diary.getId()))
+                .commentCount((int) interactService.commentCount("diary", diary.getId()))
                 .images(images)
                 .recordDate(diary.getRecordDate())
                 .createdAt(diary.getCreatedAt())
