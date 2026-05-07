@@ -21,6 +21,7 @@ public class InteractService {
     private final UserMapper userMapper;
     private final DiaryMapper diaryMapper;
     private final PostMapper postMapper;
+    private final VideoMomentMapper videoMomentMapper;
     private final NotificationService notificationService;
 
     // 点赞/取消点赞
@@ -40,7 +41,7 @@ public class InteractService {
         likeRecordMapper.insert(like);
 
         // notify target owner
-        String content = "赞了你的" + ("diary".equals(targetType) ? "日记" : "帖子");
+        String content = "赞了你的" + getTargetLabel(targetType);
         Long ownerId = getTargetOwnerId(targetType, targetId);
         if (ownerId != null) {
             notificationService.create(ownerId, userId, "like", targetType, targetId, content);
@@ -59,7 +60,7 @@ public class InteractService {
         commentMapper.insert(comment);
 
         // notify target owner
-        String notifyContent = "评论了你的" + ("diary".equals(targetType) ? "日记" : "帖子") + "：" + (content.length() > 30 ? content.substring(0, 30) + "..." : content);
+        String notifyContent = "评论了你的" + getTargetLabel(targetType) + "：" + (content.length() > 30 ? content.substring(0, 30) + "..." : content);
         Long ownerId = getTargetOwnerId(targetType, targetId);
         if (ownerId != null) {
             notificationService.create(ownerId, userId, "comment", targetType, targetId, notifyContent);
@@ -172,6 +173,17 @@ public class InteractService {
             Post post = postMapper.selectById(targetId);
             return post != null ? post.getUserId() : null;
         }
+        if ("moment".equals(targetType)) {
+            VideoMoment moment = videoMomentMapper.selectById(targetId);
+            return moment != null ? moment.getUserId() : null;
+        }
         return null;
+    }
+
+    private String getTargetLabel(String targetType) {
+        if ("diary".equals(targetType)) return "日记";
+        if ("post".equals(targetType)) return "帖子";
+        if ("moment".equals(targetType)) return "精彩时刻";
+        return "内容";
     }
 }

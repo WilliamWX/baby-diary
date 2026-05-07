@@ -29,7 +29,10 @@ const routes = [
       { path: 'user/:id', name: 'UserProfile', component: () => import('../views/UserProfile.vue') },
       { path: 'profile', name: 'Profile', component: () => import('../views/Profile.vue') },
       { path: 'search', name: 'Search', component: () => import('../views/Search.vue') },
-      { path: 'ai-doctor', name: 'AiDoctor', component: () => import('../views/AiDoctor.vue') }
+      { path: 'ai-doctor', name: 'AiDoctor', component: () => import('../views/AiDoctor.vue') },
+      { path: 'moments', name: 'MomentFeed', component: () => import('../views/MomentFeed.vue') },
+      { path: 'moment/create', name: 'MomentCreate', component: () => import('../views/MomentCreate.vue') },
+      { path: 'moment/:id', name: 'MomentDetail', component: () => import('../views/MomentDetail.vue') }
     ]
   }
 ]

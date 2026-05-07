@@ -159,6 +159,22 @@ CREATE TABLE follow (
     UNIQUE KEY uk_follow (follower_id, following_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 精彩时刻视频表
+CREATE TABLE video_moment (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    baby_id BIGINT,
+    description TEXT,
+    video_url VARCHAR(500) NOT NULL,
+    cover_url VARCHAR(500),
+    view_count INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_moment_user (user_id),
+    INDEX idx_moment_baby (baby_id),
+    INDEX idx_moment_created (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 通知表
 CREATE TABLE notification (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,

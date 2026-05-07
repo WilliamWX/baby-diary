@@ -50,6 +50,8 @@ function goToTarget(n) {
     router.push(`/diary/${n.targetId}`)
   } else if (n.targetType === 'post') {
     router.push(`/post/${n.targetId}`)
+  } else if (n.targetType === 'moment') {
+    router.push(`/moment/${n.targetId}`)
   } else if (n.type === 'follow') {
     router.push(`/user/${n.actorId}`)
   }
@@ -82,6 +84,7 @@ onMounted(() => {
           <el-menu-item index="/posts">经验分享</el-menu-item>
           <el-menu-item index="/diary/create">写日记</el-menu-item>
           <el-menu-item index="/ai-doctor">AI 医生</el-menu-item>
+          <el-menu-item index="/moments">精彩时刻</el-menu-item>
         </el-menu>
       </div>
       <div class="header-center">
