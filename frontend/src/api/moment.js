@@ -22,12 +22,13 @@ export function deleteMoment(id) {
   return request.delete(`/moment/${id}`)
 }
 
-export function uploadVideo(file) {
+export function uploadVideo(file, onProgress) {
   const formData = new FormData()
   formData.append('file', file)
   return request.post('/moment/upload-video', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
-    timeout: 120000
+    timeout: 120000,
+    onUploadProgress: onProgress
   })
 }
 

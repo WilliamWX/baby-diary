@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMomentDetail, updateMoment, deleteMoment, uploadVideo, uploadCover } from '../api/moment'
@@ -20,6 +20,8 @@ const liked = ref(false)
 const bookmarked = ref(false)
 const uploadingVideo = ref(false)
 const uploadingCover = ref(false)
+const videoRef = ref(null)
+const isFullscreen = ref(false)
 
 const isOwner = computed(() => moment.value && auth.user && moment.value.userId === auth.user.id)
 const baseUrl = BASE_URL
@@ -34,7 +36,30 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+  document.addEventListener('fullscreenchange', onFullscreenChange)
+  document.addEventListener('webkitfullscreenchange', onFullscreenChange)
 })
+
+onBeforeUnmount(() => {
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
+  document.removeEventListener('webkitfullscreenchange', onFullscreenChange)
+})
+
+function onFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
+async function toggleFullscreen() {
+  const el = videoRef.value
+  if (!el) return
+  try {
+    if (!document.fullscreenElement) {
+      await el.requestFullscreen()
+    } else {
+      await document.exitFullscreen()
+    }
+  } catch (e) { /* ignored */ }
+}
 
 async function loadComments() {
   const res = await getComments('moment', moment.value.id)
@@ -137,14 +162,19 @@ async function handleCoverChange(file) {
   <div class="moment-detail" v-loading="loading">
     <template v-if="moment && !isEditing">
       <!-- Video Player -->
-      <el-card class="video-card" shadow="hover">
+      <div class="video-player-wrap">
         <video
+          ref="videoRef"
           :src="baseUrl + moment.videoUrl"
           :poster="moment.coverUrl ? baseUrl + moment.coverUrl : undefined"
           controls
           playsinline
-          class="detail-video" />
-      </el-card>
+          class="detail-video"
+          @dblclick="toggleFullscreen" />
+        <div class="fullscreen-btn" @click="toggleFullscreen">
+          <el-icon :size="18"><FullScreen v-if="!isFullscreen" /><Aim v-else /></el-icon>
+        </div>
+      </div>
 
       <!-- Info Card -->
       <el-card class="info-card" shadow="hover">
@@ -252,12 +282,42 @@ async function handleCoverChange(file) {
 
 .video-card, .info-card, .comment-card, .edit-card { margin-bottom: 16px; }
 
-.detail-video {
-  width: 100%;
-  max-height: 500px;
+.video-player-wrap {
+  position: relative;
+  margin-bottom: 16px;
   border-radius: 8px;
+  overflow: hidden;
   background: #000;
 }
+
+.detail-video {
+  display: block;
+  width: 100%;
+  max-height: 70vh;
+}
+
+.fullscreen-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  cursor: pointer;
+  z-index: 10;
+}
+.fullscreen-btn:hover { background: rgba(0,0,0,0.7); }
+
+.detail-video:fullscreen {
+  max-height: none;
+  object-fit: contain;
+}
+.detail-video::-webkit-media-controls-fullscreen-button { display: none; }
 
 .moment-header {
   display: flex;

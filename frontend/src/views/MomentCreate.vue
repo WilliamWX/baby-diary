@@ -19,6 +19,8 @@ const form = ref({
 const videoFile = ref(null)
 const videoPreviewUrl = ref('')
 const uploadingVideo = ref(false)
+const uploadProgress = ref(0)
+const processingVideo = ref(false)
 const uploadingCover = ref(false)
 const submitting = ref(false)
 const babies = ref([])
@@ -48,16 +50,27 @@ function beforeVideoUpload(file) {
 async function handleVideoChange(file) {
   if (!beforeVideoUpload(file.raw)) return
   uploadingVideo.value = true
+  uploadProgress.value = 0
+  processingVideo.value = false
   try {
     videoFile.value = file.raw
     videoPreviewUrl.value = URL.createObjectURL(file.raw)
-    const res = await uploadVideo(file.raw)
+    const res = await uploadVideo(file.raw, (e) => {
+      if (e.total) {
+        const pct = Math.round((e.loaded / e.total) * 100)
+        uploadProgress.value = pct
+        if (pct >= 100) {
+          processingVideo.value = true
+        }
+      }
+    })
     form.value.videoUrl = res.data.url
     ElMessage.success('视频上传成功')
   } catch (e) {
     ElMessage.error('视频上传失败')
   } finally {
     uploadingVideo.value = false
+    processingVideo.value = false
   }
 }
 
@@ -103,26 +116,43 @@ loadBabies()
         <!-- Video Upload -->
         <el-form-item label="视频">
           <div class="video-upload-area">
-            <div v-if="videoPreviewUrl" class="video-preview">
-              <video :src="videoPreviewUrl" controls class="preview-video" />
-              <el-button type="danger" size="small" class="change-video-btn" @click="videoPreviewUrl='';form.videoUrl='';videoFile=null">
-                更换视频
-              </el-button>
-            </div>
+            <!-- Upload zone (before file selected) -->
             <el-upload
-              v-else
+              v-if="!videoPreviewUrl"
               :auto-upload="false"
               :show-file-list="false"
               accept="video/mp4,video/mov,video/webm"
               @change="handleVideoChange"
               drag>
               <div class="upload-placeholder">
-                <el-icon :size="48" v-if="!uploadingVideo"><VideoCamera /></el-icon>
-                <p v-if="!uploadingVideo">点击或拖拽上传视频</p>
-                <p v-else>上传中...</p>
+                <el-icon :size="48"><VideoCamera /></el-icon>
+                <p>点击或拖拽上传视频</p>
                 <span class="upload-hint">支持 mp4、mov、webm，最大 100MB</span>
               </div>
             </el-upload>
+
+            <!-- Preview + progress overlay (during upload/processing) -->
+            <div v-else-if="uploadingVideo" class="video-preview">
+              <video :src="videoPreviewUrl" class="preview-video muted" />
+              <div class="upload-overlay">
+                <template v-if="processingVideo">
+                  <el-icon :size="36" class="is-loading"><Loading /></el-icon>
+                  <p>正在处理视频，请稍候...</p>
+                </template>
+                <template v-else>
+                  <el-progress :percentage="uploadProgress" :stroke-width="8" :text-inside="true" style="width:80%;max-width:300px" />
+                  <p>上传中... {{ uploadProgress }}%</p>
+                </template>
+              </div>
+            </div>
+
+            <!-- Preview (upload complete) -->
+            <div v-else class="video-preview">
+              <video :src="videoPreviewUrl" controls class="preview-video" />
+              <el-button type="danger" size="small" class="change-video-btn" @click="videoPreviewUrl='';form.videoUrl='';videoFile=null">
+                更换视频
+              </el-button>
+            </div>
           </div>
         </el-form-item>
 
@@ -182,6 +212,23 @@ loadBabies()
 .video-upload-area { width: 100%; }
 .video-preview { position: relative; }
 .preview-video { width: 100%; max-height: 360px; border-radius: 8px; background: #000; }
+.preview-video.muted { opacity: 0.45; }
+.upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.upload-overlay .is-loading { color: #fff; animation: spin 1s linear infinite; }
+.upload-overlay p { color: #fff; font-size: 14px; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 .change-video-btn { position: absolute; top: 8px; right: 8px; }
 
 .upload-placeholder {

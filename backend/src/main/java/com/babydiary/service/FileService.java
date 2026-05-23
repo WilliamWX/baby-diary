@@ -38,6 +38,22 @@ public class FileService {
         }
     }
 
+    public String upload(java.io.File file, String folder, String contentType) {
+        try {
+            String ext = getExtension(file.getName());
+            String filename = folder + "/" + UUID.randomUUID() + ext;
+            minioClient.putObject(PutObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(filename)
+                    .stream(new java.io.FileInputStream(file), file.length(), -1)
+                    .contentType(contentType)
+                    .build());
+            return "/" + bucket + "/" + filename;
+        } catch (Exception e) {
+            throw new RuntimeException("文件上传失败", e);
+        }
+    }
+
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) return "";
         return filename.substring(filename.lastIndexOf("."));

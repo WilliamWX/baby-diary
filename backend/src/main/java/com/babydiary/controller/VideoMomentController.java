@@ -6,6 +6,7 @@ import com.babydiary.dto.VideoMomentDTO;
 import com.babydiary.entity.VideoMoment;
 import com.babydiary.service.FileService;
 import com.babydiary.service.VideoMomentService;
+import com.babydiary.service.VideoTranscodeService;
 import com.babydiary.vo.VideoMomentVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class VideoMomentController {
 
     private final VideoMomentService videoMomentService;
     private final FileService fileService;
+    private final VideoTranscodeService videoTranscodeService;
 
     @PostMapping
     public Result<VideoMoment> create(@Valid @RequestBody VideoMomentDTO dto, Authentication auth) {
@@ -56,10 +58,15 @@ public class VideoMomentController {
 
     @PostMapping("/upload-video")
     public Result<Map<String, String>> uploadVideo(@RequestParam("file") MultipartFile file) {
-        String url = fileService.upload(file, "video");
-        Map<String, String> data = new HashMap<>();
-        data.put("url", url);
-        return Result.ok(data);
+        try {
+            java.io.File transcoded = videoTranscodeService.transcodeIfNeeded(file);
+            String url = fileService.upload(transcoded, "video", "video/mp4");
+            Map<String, String> data = new HashMap<>();
+            data.put("url", url);
+            return Result.ok(data);
+        } catch (Exception e) {
+            return Result.error("视频上传失败: " + e.getMessage());
+        }
     }
 
     @PostMapping("/upload-cover")
