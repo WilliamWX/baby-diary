@@ -19,6 +19,7 @@ const routes = [
     component: () => import('../components/layout/MainLayout.vue'),
     children: [
       { path: '', name: 'Home', component: () => import('../views/Home.vue') },
+      { path: 'diary', name: 'DiaryList', component: () => import('../views/DiaryList.vue') },
       { path: 'diary/create', name: 'DiaryCreate', component: () => import('../views/DiaryCreate.vue') },
       { path: 'diary/:id', name: 'DiaryDetail', component: () => import('../views/DiaryDetail.vue') },
       { path: 'baby/:id', name: 'BabyHome', component: () => import('../views/BabyHome.vue') },

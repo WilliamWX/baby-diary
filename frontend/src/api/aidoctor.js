@@ -7,3 +7,7 @@ export function askDoctor(data) {
 export function getHistory(page = 1, size = 20) {
   return request.get(`/ai-doctor/history?page=${page}&size=${size}`)
 }
+
+export function getTopChat() {
+  return request.get('/ai-doctor/top')
+}

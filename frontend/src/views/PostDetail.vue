@@ -2,7 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getPostDetail, updatePost, deletePost, toggleLike, getComments, addComment, toggleBookmark } from '../api/post'
+import { getPostDetail, updatePost, deletePost, toggleLike, getComments, addComment, toggleBookmark, getInteractStatus } from '../api/post'
 import { useAuthStore } from '../stores/auth'
 import { BASE_URL } from '../utils/config'
 
@@ -28,6 +28,7 @@ onMounted(async () => {
     const res = await getPostDetail(route.params.id)
     post.value = res.data
     loadComments()
+    loadInteractStatus()
   } catch (e) {
     ElMessage.error('加载失败')
   } finally {
@@ -38,6 +39,14 @@ onMounted(async () => {
 async function loadComments() {
   const res = await getComments('post', post.value.id)
   comments.value = res.data || []
+}
+
+async function loadInteractStatus() {
+  try {
+    const res = await getInteractStatus('post', post.value.id)
+    liked.value = res.data.liked || false
+    bookmarked.value = res.data.bookmarked || false
+  } catch (e) { /* ignored */ }
 }
 
 async function handleLike() {
@@ -130,10 +139,10 @@ async function handleDelete() {
         <div class="post-content">{{ post.content }}</div>
         <div class="post-actions">
           <el-button :type="liked ? 'primary' : 'default'" @click="handleLike">
-            <el-icon><Star /></el-icon> {{ post.likeCount || 0 }}
+            <svg viewBox="0 0 24 24" width="1em" height="1em" :fill="liked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ post.likeCount || 0 }}
           </el-button>
           <el-button :type="bookmarked ? 'warning' : 'default'" @click="handleBookmark">
-            <el-icon><Collection /></el-icon> {{ bookmarked ? '已收藏' : '收藏' }}
+            <el-icon><StarFilled v-if="bookmarked" /><Star v-else /></el-icon> {{ bookmarked ? '已收藏' : '收藏' }}
           </el-button>
           <template v-if="isOwner">
             <el-button type="warning" @click="startEdit">编辑</el-button>
@@ -214,6 +223,8 @@ async function handleDelete() {
 .post-title { font-size: 22px; margin-bottom: 16px; color: #222; line-height: 1.4; }
 .post-content { font-size: 16px; line-height: 1.8; color: #333; white-space: pre-wrap; margin-bottom: 20px; }
 .post-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+.post-actions .el-button--primary { background: #ff6b81; border-color: #ff6b81; }
+.post-actions .el-button--primary:hover { background: #e85d72; border-color: #e85d72; }
 
 .comment-section-title { margin-bottom: 16px; }
 .comment-section-title h3 { font-size: 16px; color: #333; margin: 0; }

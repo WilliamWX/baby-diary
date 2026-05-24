@@ -35,8 +35,9 @@ public class DiaryController {
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long babyId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sort,
             Authentication auth) {
-        return diaryService.list(page, size, (Long) auth.getPrincipal(), babyId, keyword);
+        return diaryService.list(page, size, (Long) auth.getPrincipal(), babyId, keyword, sort);
     }
 
     @GetMapping("/{id}")

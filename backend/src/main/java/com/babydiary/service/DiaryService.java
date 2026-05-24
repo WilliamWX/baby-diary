@@ -52,25 +52,37 @@ public class DiaryService {
         return Result.ok(diary);
     }
 
-    public Result<PageResult<DiaryVO>> list(int page, int size, Long userId, Long babyId, String keyword) {
+    public Result<PageResult<DiaryVO>> list(int page, int size, Long userId, Long babyId, String keyword, String sort) {
         LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
-                .eq(Diary::getVisibility, 1)
-                .orderByDesc(Diary::getCreatedAt);
+                .eq(Diary::getVisibility, 1);
         if (babyId != null) {
             wrapper.eq(Diary::getBabyId, babyId);
         }
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(Diary::getContent, keyword);
         }
-        IPage<Diary> pageObj = diaryMapper.selectPage(new Page<>(page, size), wrapper);
-        List<DiaryVO> vos = pageObj.getRecords().stream()
-                .map(this::toVO)
-                .collect(Collectors.toList());
+
         PageResult<DiaryVO> result = new PageResult<>();
-        result.setTotal(pageObj.getTotal());
-        result.setPages(pageObj.getPages());
-        result.setCurrent(pageObj.getCurrent());
-        result.setRecords(vos);
+        if ("popular".equals(sort)) {
+            wrapper.orderByDesc(Diary::getCreatedAt);
+            List<Diary> allDiaries = diaryMapper.selectList(wrapper);
+            List<DiaryVO> allVos = allDiaries.stream().map(d -> toVO(d, userId)).collect(Collectors.toList());
+            allVos.sort((a, b) -> Integer.compare(b.getLikeCount(), a.getLikeCount()));
+            result.setTotal(allVos.size());
+            result.setPages((int) Math.ceil((double) allVos.size() / size));
+            result.setCurrent(page);
+            int from = (page - 1) * size;
+            int to = Math.min(from + size, allVos.size());
+            result.setRecords(from < allVos.size() ? allVos.subList(from, to) : List.of());
+        } else {
+            wrapper.orderByDesc(Diary::getCreatedAt);
+            IPage<Diary> pageObj = diaryMapper.selectPage(new Page<>(page, size), wrapper);
+            List<DiaryVO> vos = pageObj.getRecords().stream().map(d -> toVO(d, userId)).collect(Collectors.toList());
+            result.setTotal(pageObj.getTotal());
+            result.setPages(pageObj.getPages());
+            result.setCurrent(pageObj.getCurrent());
+            result.setRecords(vos);
+        }
         return Result.ok(result);
     }
 
@@ -84,7 +96,7 @@ public class DiaryService {
         }
         diary.setViewCount(diary.getViewCount() + 1);
         diaryMapper.updateById(diary);
-        return Result.ok(toVO(diary));
+        return Result.ok(toVO(diary, userId));
     }
 
     @Transactional
@@ -132,7 +144,7 @@ public class DiaryService {
         return Result.ok("删除成功");
     }
 
-    private DiaryVO toVO(Diary diary) {
+    private DiaryVO toVO(Diary diary, Long userId) {
         User user = userMapper.selectById(diary.getUserId());
         String babyName = null;
         if (diary.getBabyId() != null) {
@@ -157,6 +169,8 @@ public class DiaryService {
                 .viewCount(diary.getViewCount())
                 .likeCount((int) interactService.likeCount("diary", diary.getId()))
                 .commentCount((int) interactService.commentCount("diary", diary.getId()))
+                .liked(interactService.isLiked(userId, "diary", diary.getId()))
+                .bookmarked(interactService.isBookmarked(userId, "diary", diary.getId()))
                 .images(images)
                 .recordDate(diary.getRecordDate())
                 .createdAt(diary.getCreatedAt())

@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { createMoment, uploadVideo, uploadCover } from '../api/moment'
+import { createMoment, uploadVideo } from '../api/moment'
 import { getBabyList } from '../api/baby'
 import { BASE_URL } from '../utils/config'
 
@@ -21,7 +21,6 @@ const videoPreviewUrl = ref('')
 const uploadingVideo = ref(false)
 const uploadProgress = ref(0)
 const processingVideo = ref(false)
-const uploadingCover = ref(false)
 const submitting = ref(false)
 const babies = ref([])
 
@@ -65,25 +64,13 @@ async function handleVideoChange(file) {
       }
     })
     form.value.videoUrl = res.data.url
+    form.value.coverUrl = res.data.coverUrl || ''
     ElMessage.success('视频上传成功')
   } catch (e) {
     ElMessage.error('视频上传失败')
   } finally {
     uploadingVideo.value = false
     processingVideo.value = false
-  }
-}
-
-async function handleCoverChange(file) {
-  uploadingCover.value = true
-  try {
-    const res = await uploadCover(file.raw)
-    form.value.coverUrl = res.data.url
-    ElMessage.success('封面上传成功')
-  } catch (e) {
-    ElMessage.error('封面上传失败')
-  } finally {
-    uploadingCover.value = false
   }
 }
 
@@ -156,28 +143,6 @@ loadBabies()
           </div>
         </el-form-item>
 
-        <!-- Cover Upload -->
-        <el-form-item label="封面图">
-          <div class="cover-upload">
-            <div v-if="form.coverUrl" class="cover-preview">
-              <el-image :src="baseUrl + form.coverUrl" fit="cover" class="cover-img" />
-              <el-button type="danger" circle size="small" class="remove-cover" @click="form.coverUrl = ''">
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </div>
-            <el-upload
-              v-else
-              :auto-upload="false"
-              :show-file-list="false"
-              accept="image/*"
-              @change="handleCoverChange">
-              <div class="cover-btn">
-                <el-icon :size="24"><Plus /></el-icon>
-              </div>
-            </el-upload>
-          </div>
-        </el-form-item>
-
         <!-- Description -->
         <el-form-item label="描述">
           <el-input
@@ -239,21 +204,4 @@ loadBabies()
 .upload-placeholder p { margin: 8px 0 4px; font-size: 14px; color: #999; }
 .upload-hint { font-size: 12px; color: #ccc; }
 
-.cover-upload { display: flex; align-items: center; }
-.cover-preview { position: relative; width: 120px; height: 90px; }
-.cover-img { width: 120px; height: 90px; border-radius: 6px; }
-.remove-cover { position: absolute; top: -8px; right: -8px; }
-.cover-btn {
-  width: 120px;
-  height: 90px;
-  border: 2px dashed #ddd;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #ccc;
-  transition: border-color 0.2s;
-}
-.cover-btn:hover { border-color: #ff6b81; color: #ff6b81; }
 </style>

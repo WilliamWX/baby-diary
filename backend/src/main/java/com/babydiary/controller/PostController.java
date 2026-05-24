@@ -26,13 +26,15 @@ public class PostController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String keyword) {
-        return postService.list(page, size, category, keyword);
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sort,
+            Authentication auth) {
+        return postService.list(page, size, category, keyword, sort, (Long) auth.getPrincipal());
     }
 
     @GetMapping("/{id}")
-    public Result<PostVO> detail(@PathVariable Long id) {
-        return postService.detail(id);
+    public Result<PostVO> detail(@PathVariable Long id, Authentication auth) {
+        return postService.detail(id, (Long) auth.getPrincipal());
     }
 
     @PutMapping("/{id}")

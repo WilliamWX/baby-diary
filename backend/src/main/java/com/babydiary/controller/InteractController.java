@@ -29,6 +29,11 @@ public class InteractController {
                 dto.getTargetType(), dto.getTargetId(), dto.getParentId(), dto.getContent());
     }
 
+    @GetMapping("/status/{type}/{id}")
+    public Result<Map<String, Boolean>> status(@PathVariable String type, @PathVariable Long id, Authentication auth) {
+        return Result.ok(interactService.getUserStatus((Long) auth.getPrincipal(), type, id));
+    }
+
     @GetMapping("/comment/{type}/{id}")
     public Result<List<Map<String, Object>>> comments(@PathVariable String type, @PathVariable Long id) {
         return interactService.getComments(type, id);

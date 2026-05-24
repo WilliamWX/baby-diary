@@ -20,5 +20,7 @@ public class VideoMomentVO {
     private Integer viewCount;
     private Integer likeCount;
     private Integer commentCount;
+    private Boolean liked;
+    private Boolean bookmarked;
     private LocalDateTime createdAt;
 }

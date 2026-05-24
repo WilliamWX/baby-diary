@@ -85,6 +85,45 @@ public class VideoTranscodeService {
         return inputFile;
     }
 
+    /**
+     * Extract the first frame from a video file as a JPEG cover image.
+     */
+    public File extractCover(File videoFile) throws IOException {
+        Path tmpDir = Files.createTempDirectory("video-cover-");
+        File coverFile = new File(tmpDir.toFile(), "cover.jpg");
+
+        ProcessBuilder pb = new ProcessBuilder(
+                FFMPEG_PATH,
+                "-y",
+                "-i", videoFile.getAbsolutePath(),
+                "-vframes", "1",
+                "-q:v", "2",
+                coverFile.getAbsolutePath()
+        );
+        pb.redirectErrorStream(true);
+
+        try {
+            Process p = pb.start();
+            Thread drainer = new Thread(() -> {
+                try (var is = p.getInputStream()) {
+                    is.transferTo(OutputStream.nullOutputStream());
+                } catch (IOException ignored) { }
+            });
+            drainer.start();
+            int exit = p.waitFor();
+            drainer.join();
+            if (exit == 0 && coverFile.exists() && coverFile.length() > 0) {
+                log.info("Cover extracted: {} bytes", coverFile.length());
+                return coverFile;
+            }
+            log.warn("Cover extraction failed with exit code {}", exit);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("Cover extraction interrupted");
+        }
+        return null;
+    }
+
     private String getExtension(String filename) {
         if (filename == null || !filename.contains(".")) return ".mp4";
         return filename.substring(filename.lastIndexOf("."));

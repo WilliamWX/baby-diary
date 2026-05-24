@@ -4,8 +4,8 @@ export function createDiary(data) {
   return request.post('/diary', data)
 }
 
-export function getDiaryList(page = 1, size = 10, babyId = null) {
-  let url = `/diary/?page=${page}&size=${size}`
+export function getDiaryList(page = 1, size = 10, babyId = null, sort = '') {
+  let url = `/diary/?page=${page}&size=${size}&sort=${sort}`
   if (babyId) url += `&babyId=${babyId}`
   return request.get(url)
 }

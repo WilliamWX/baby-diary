@@ -21,6 +21,8 @@ public class DiaryVO {
     private Integer viewCount;
     private Integer likeCount;
     private Integer commentCount;
+    private Boolean liked;
+    private Boolean bookmarked;
     private List<String> images;
     private LocalDate recordDate;
     private LocalDateTime createdAt;

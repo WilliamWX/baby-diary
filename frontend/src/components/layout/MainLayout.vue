@@ -81,10 +81,10 @@ onMounted(() => {
         <router-link to="/" class="logo-link"><Logo :size="36" /></router-link>
         <el-menu mode="horizontal" :default-active="$route.path" router>
           <el-menu-item index="/">首页</el-menu-item>
-          <el-menu-item index="/posts">经验分享</el-menu-item>
-          <el-menu-item index="/diary/create">写日记</el-menu-item>
-          <el-menu-item index="/ai-doctor">AI 医生</el-menu-item>
           <el-menu-item index="/moments">精彩时刻</el-menu-item>
+          <el-menu-item index="/diary">日记</el-menu-item>
+          <el-menu-item index="/posts">经验</el-menu-item>
+          <el-menu-item index="/ai-doctor">AI 医生</el-menu-item>
         </el-menu>
       </div>
       <div class="header-center">

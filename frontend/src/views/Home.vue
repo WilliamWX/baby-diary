@@ -2,6 +2,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getDiaryList } from '../api/diary'
+import { getMomentList } from '../api/moment'
+import { getPostList } from '../api/post'
+import { getTopChat } from '../api/aidoctor'
 import { useAuthStore } from '../stores/auth'
 import Logo from '../components/Logo.vue'
 import { BASE_URL } from '../utils/config'
@@ -9,11 +12,10 @@ import { BASE_URL } from '../utils/config'
 const router = useRouter()
 const auth = useAuthStore()
 
-const diaryList = ref([])
-const loading = ref(false)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(0)
+const featuredDiary = ref(null)
+const featuredPost = ref(null)
+const featuredMoment = ref(null)
+const featuredAi = ref(null)
 
 const stats = ref({ diaryCount: 0, followerCount: 0, followingCount: 0 })
 const baseUrl = BASE_URL
@@ -31,24 +33,24 @@ async function fetchStats() {
   } catch (e) { /* ignored */ }
 }
 
-async function fetchDiaries() {
-  loading.value = true
+async function fetchFeatured() {
   try {
-    const res = await getDiaryList(currentPage.value, pageSize.value)
-    diaryList.value = res.data.records || []
-    total.value = res.data.total || 0
+    const [dr, pr, mr, ar] = await Promise.all([
+      getDiaryList(1, 1, null, 'popular'),
+      getPostList(1, 1, '', 'popular'),
+      getMomentList(1, 1, null, 'popular'),
+      getTopChat()
+    ])
+    featuredDiary.value = dr.data.records?.[0] || null
+    featuredPost.value = pr.data.records?.[0] || null
+    featuredMoment.value = mr.data.records?.[0] || null
+    featuredAi.value = ar.data || null
   } catch (e) { /* ignored */ }
-  finally { loading.value = false }
-}
-
-function onPageChange(page) {
-  currentPage.value = page
-  fetchDiaries()
 }
 
 onMounted(() => {
   fetchStats()
-  fetchDiaries()
+  fetchFeatured()
 })
 </script>
 
@@ -79,66 +81,62 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Quick Actions -->
-    <div class="quick-actions">
-      <el-button type="primary" @click="router.push('/diary/create')">
-        <el-icon><Edit /></el-icon> 写日记
-      </el-button>
-      <el-button @click="router.push('/ai-doctor')">
-        <el-icon><FirstAidKit /></el-icon> AI 医生
-      </el-button>
-      <el-button @click="router.push('/posts')">
-        <el-icon><ChatLineSquare /></el-icon> 经验广场
-      </el-button>
-    </div>
-
-    <!-- Diary Feed -->
-    <div class="feed">
-      <div v-if="loading" v-loading="loading" style="min-height:200px" />
-      <div v-else-if="diaryList.length === 0" class="empty">
-        <el-empty description="还没有日记，快去写第一篇吧">
-          <el-button type="primary" @click="router.push('/diary/create')">写日记</el-button>
-        </el-empty>
-      </div>
-      <template v-else>
-        <div class="section-title">最新日记</div>
-        <el-card v-for="item in diaryList" :key="item.id" class="diary-card" shadow="hover" @click="router.push(`/diary/${item.id}`)">
-          <div class="card-header">
-            <div class="author">
-              <el-avatar :size="40" :src="item.authorAvatar ? baseUrl + item.authorAvatar : undefined" icon="UserFilled" />
-              <div class="author-info">
-                <span class="author-name">{{ item.authorName }}</span>
-                <span class="author-time">{{ item.recordDate || item.createdAt?.slice(0, 10) }}</span>
-              </div>
-            </div>
-            <el-tag v-if="item.babyName" size="small" type="warning">{{ item.babyName }}</el-tag>
+    <!-- Featured: top liked items -->
+    <div class="featured" v-if="featuredDiary || featuredPost || featuredMoment || featuredAi">
+      <div class="section-title">热门推荐</div>
+      <div class="featured-grid">
+        <!-- Featured Moment -->
+        <el-card v-if="featuredMoment" class="featured-card" shadow="hover" @click="router.push(`/moment/${featuredMoment.id}`)">
+          <div class="featured-cover" v-if="featuredMoment.coverUrl">
+            <el-image :src="baseUrl + featuredMoment.coverUrl" fit="cover" class="featured-img" />
+            <div class="featured-play"><el-icon :size="22"><VideoPlay /></el-icon></div>
           </div>
-          <p class="card-preview">{{ item.content?.slice(0, 200) }}</p>
-          <div v-if="item.images?.length" class="card-images">
-            <el-image
-              v-for="(img, idx) in item.images.slice(0, 3)"
-              :key="idx"
-              :src="baseUrl + img"
-              fit="cover"
-              class="card-thumb"
-              :style="{ width: item.images.length === 1 ? '100%' : 'calc(33.33% - 4px)' }" />
-          </div>
-          <div class="card-footer">
-            <span><el-icon><View /></el-icon> {{ item.viewCount }}</span>
-            <span><el-icon><Star /></el-icon> {{ item.likeCount || 0 }}</span>
-            <span><el-icon><ChatLineSquare /></el-icon> {{ item.commentCount || 0 }}</span>
+          <div class="featured-tag"><el-tag size="small" type="danger">精彩时刻</el-tag></div>
+          <p class="featured-text">{{ featuredMoment.description?.slice(0, 80) || '无描述' }}</p>
+          <div class="featured-meta">
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ featuredMoment.likeCount || 0 }}</span>
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> {{ featuredMoment.commentCount || 0 }}</span>
+            <span>{{ featuredMoment.authorName }}</span>
           </div>
         </el-card>
-        <div class="pagination-wrap" v-if="total > pageSize">
-          <el-pagination
-            background
-            layout="prev, pager, next"
-            :total="total"
-            :page-size="pageSize"
-            :current-page="currentPage"
-            @current-change="onPageChange" />
-        </div>
-      </template>
+
+        <!-- Featured Diary -->
+        <el-card v-if="featuredDiary" class="featured-card" shadow="hover" @click="router.push(`/diary/${featuredDiary.id}`)">
+          <div class="featured-cover" v-if="featuredDiary.images?.length">
+            <el-image :src="baseUrl + featuredDiary.images[0]" fit="cover" class="featured-img" />
+          </div>
+          <div class="featured-tag"><el-tag size="small" type="warning">日记</el-tag></div>
+          <p class="featured-text">{{ featuredDiary.content?.slice(0, 80) }}</p>
+          <div class="featured-meta">
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ featuredDiary.likeCount || 0 }}</span>
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> {{ featuredDiary.commentCount || 0 }}</span>
+            <span>{{ featuredDiary.authorName }}</span>
+          </div>
+        </el-card>
+
+        <!-- Featured Post -->
+        <el-card v-if="featuredPost" class="featured-card" shadow="hover" @click="router.push(`/post/${featuredPost.id}`)">
+          <div class="featured-tag"><el-tag size="small" type="primary">经验</el-tag></div>
+          <p class="featured-title">{{ featuredPost.title }}</p>
+          <p class="featured-text">{{ featuredPost.content?.slice(0, 80) }}</p>
+          <div class="featured-meta">
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ featuredPost.likeCount || 0 }}</span>
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> {{ featuredPost.commentCount || 0 }}</span>
+            <span>{{ featuredPost.authorName }}</span>
+          </div>
+        </el-card>
+
+        <!-- Featured AI -->
+        <el-card v-if="featuredAi" class="featured-card" shadow="hover" @click="router.push('/ai-doctor')">
+          <div class="featured-tag"><el-tag size="small" type="success">AI 医生</el-tag></div>
+          <p class="featured-text">Q: {{ featuredAi.question?.slice(0, 60) }}</p>
+          <p class="featured-answer">{{ featuredAi.answer?.slice(0, 60) }}</p>
+          <div class="featured-meta">
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ featuredAi.likeCount || 0 }}</span>
+            <span>{{ featuredAi.username }}</span>
+          </div>
+        </el-card>
+      </div>
     </div>
   </div>
 </template>
@@ -160,123 +158,56 @@ onMounted(() => {
   align-items: center;
   color: #fff;
 }
-.banner-left {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-.banner-text h1 {
-  font-size: 22px;
-  margin: 0;
-}
-.banner-text p {
-  font-size: 13px;
-  margin: 4px 0 0;
-  opacity: 0.9;
-}
-.stats-row {
-  display: flex;
-  gap: 24px;
-}
-.stat-item {
-  text-align: center;
-  cursor: pointer;
-}
-.stat-num {
-  display: block;
-  font-size: 24px;
-  font-weight: 700;
-}
-.stat-label {
-  font-size: 12px;
-  opacity: 0.85;
-}
+.banner-left { display: flex; align-items: center; gap: 16px; }
+.banner-text h1 { font-size: 22px; margin: 0; }
+.banner-text p { font-size: 13px; margin: 4px 0 0; opacity: 0.9; }
+.stats-row { display: flex; gap: 24px; }
+.stat-item { text-align: center; cursor: pointer; }
+.stat-num { display: block; font-size: 24px; font-weight: 700; }
+.stat-label { font-size: 12px; opacity: 0.85; }
 
-.quick-actions {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
+.featured { margin-bottom: 24px; }
 .section-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 12px;
-  padding-left: 4px;
+  font-size: 16px; font-weight: 600; color: #333;
+  margin-bottom: 12px; padding-left: 4px;
 }
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.featured-card { cursor: pointer; }
+.featured-card:hover { transform: translateY(-2px); transition: transform 0.2s; }
+.featured-cover {
+  position: relative; aspect-ratio: 16/9; overflow: hidden;
+  border-radius: 6px; margin-bottom: 8px; background: #f0f0f0;
+}
+.featured-img { width: 100%; height: 100%; }
+.featured-play {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  color: #fff; background: rgba(0,0,0,0.4);
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
+.featured-tag { margin-bottom: 6px; }
+.featured-title { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 4px; }
+.featured-text {
+  font-size: 13px; color: #777; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; margin-bottom: 4px;
+}
+.featured-answer {
+  font-size: 12px; color: #aaa; line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; margin-bottom: 8px;
+}
+.featured-meta {
+  display: flex; gap: 12px; font-size: 12px; color: #bbb; align-items: center;
+}
+.featured-meta span { display: flex; align-items: center; gap: 2px; }
 
-.diary-card {
-  margin-bottom: 16px;
-  cursor: pointer;
-}
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-.author {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.author-info {
-  display: flex;
-  flex-direction: column;
-}
-.author-name {
-  font-size: 15px;
-  color: #333;
-  font-weight: 500;
-}
-.author-time {
-  font-size: 12px;
-  color: #999;
-  margin-top: 2px;
-}
-.card-preview {
-  font-size: 15px;
-  color: #444;
-  line-height: 1.7;
-  margin-bottom: 12px;
-  white-space: pre-wrap;
-}
-
-.card-images {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-.card-thumb {
-  border-radius: 6px;
-  aspect-ratio: 1;
-  object-fit: cover;
-}
-
-.card-footer {
-  display: flex;
-  gap: 20px;
-  color: #999;
-  font-size: 13px;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
-}
-.card-footer span {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.pagination-wrap {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  padding-bottom: 20px;
-}
-
-.empty {
-  margin-top: 60px;
+@media (max-width: 640px) {
+  .featured-grid { grid-template-columns: 1fr; }
 }
 </style>

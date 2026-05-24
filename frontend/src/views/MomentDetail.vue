@@ -2,8 +2,8 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMomentDetail, updateMoment, deleteMoment, uploadVideo, uploadCover } from '../api/moment'
-import { toggleLike, getComments, addComment, toggleBookmark } from '../api/post'
+import { getMomentDetail, updateMoment, deleteMoment, uploadVideo } from '../api/moment'
+import { toggleLike, getComments, addComment, toggleBookmark, getInteractStatus } from '../api/post'
 import { useAuthStore } from '../stores/auth'
 import { BASE_URL } from '../utils/config'
 
@@ -19,7 +19,6 @@ const editForm = ref({ description: '', babyId: null })
 const liked = ref(false)
 const bookmarked = ref(false)
 const uploadingVideo = ref(false)
-const uploadingCover = ref(false)
 const videoRef = ref(null)
 const isFullscreen = ref(false)
 
@@ -31,6 +30,7 @@ onMounted(async () => {
     const res = await getMomentDetail(route.params.id)
     moment.value = res.data
     loadComments()
+    loadInteractStatus()
   } catch (e) {
     ElMessage.error('加载失败')
   } finally {
@@ -66,6 +66,14 @@ async function loadComments() {
   comments.value = res.data || []
 }
 
+async function loadInteractStatus() {
+  try {
+    const res = await getInteractStatus('moment', moment.value.id)
+    liked.value = res.data.liked || false
+    bookmarked.value = res.data.bookmarked || false
+  } catch (e) { /* ignored */ }
+}
+
 async function handleLike() {
   try {
     await toggleLike('moment', moment.value.id)
@@ -99,7 +107,9 @@ async function submitComment() {
 function startEdit() {
   editForm.value = {
     description: moment.value.description,
-    babyId: moment.value.babyId
+    babyId: moment.value.babyId,
+    videoUrl: moment.value.videoUrl,
+    coverUrl: moment.value.coverUrl
   }
   isEditing.value = true
 }
@@ -111,6 +121,8 @@ async function handleSave() {
     await updateMoment(moment.value.id, editForm.value)
     moment.value.description = editForm.value.description
     moment.value.babyId = editForm.value.babyId
+    moment.value.videoUrl = editForm.value.videoUrl
+    moment.value.coverUrl = editForm.value.coverUrl
     isEditing.value = false
     ElMessage.success('更新成功')
   } catch (e) {
@@ -135,7 +147,10 @@ async function handleVideoChange(file) {
   uploadingVideo.value = true
   try {
     const res = await uploadVideo(file.raw)
+    editForm.value.videoUrl = res.data.url
+    editForm.value.coverUrl = res.data.coverUrl || ''
     moment.value.videoUrl = res.data.url
+    moment.value.coverUrl = res.data.coverUrl || ''
     ElMessage.success('视频更新成功')
   } catch (e) {
     ElMessage.error('视频上传失败')
@@ -144,18 +159,6 @@ async function handleVideoChange(file) {
   }
 }
 
-async function handleCoverChange(file) {
-  uploadingCover.value = true
-  try {
-    const res = await uploadCover(file.raw)
-    moment.value.coverUrl = res.data.url
-    ElMessage.success('封面更新成功')
-  } catch (e) {
-    ElMessage.error('封面上传失败')
-  } finally {
-    uploadingCover.value = false
-  }
-}
 </script>
 
 <template>
@@ -194,10 +197,10 @@ async function handleCoverChange(file) {
         <p class="moment-desc">{{ moment.description || '无描述' }}</p>
         <div class="moment-actions">
           <el-button :type="liked ? 'primary' : 'default'" @click="handleLike">
-            <el-icon><Star /></el-icon> {{ moment.likeCount || 0 }}
+            <svg viewBox="0 0 24 24" width="1em" height="1em" :fill="liked ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> {{ moment.likeCount || 0 }}
           </el-button>
           <el-button :type="bookmarked ? 'warning' : 'default'" @click="handleBookmark">
-            <el-icon><Collection /></el-icon> {{ bookmarked ? '已收藏' : '收藏' }}
+            <el-icon><StarFilled v-if="bookmarked" /><Star v-else /></el-icon> {{ bookmarked ? '已收藏' : '收藏' }}
           </el-button>
           <template v-if="isOwner">
             <el-button type="warning" @click="startEdit">编辑</el-button>
@@ -259,17 +262,8 @@ async function handleCoverChange(file) {
             </div>
           </el-upload>
         </el-form-item>
-        <el-form-item label="更换封面">
-          <el-upload
-            :auto-upload="false"
-            :show-file-list="false"
-            accept="image/*"
-            @change="handleCoverChange">
-            <el-button :loading="uploadingCover">选择封面图</el-button>
-          </el-upload>
-        </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSave">保存</el-button>
+          <el-button type="primary" :disabled="uploadingVideo" @click="handleSave">保存</el-button>
           <el-button @click="cancelEdit">取消</el-button>
         </el-form-item>
       </el-form>
@@ -341,6 +335,8 @@ async function handleCoverChange(file) {
   margin-bottom: 16px;
 }
 .moment-actions { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid #f0f0f0; }
+.moment-actions .el-button--primary { background: #ff6b81; border-color: #ff6b81; }
+.moment-actions .el-button--primary:hover { background: #e85d72; border-color: #e85d72; }
 
 .comment-section-title { margin-bottom: 16px; }
 .comment-section-title h3 { font-size: 16px; color: #333; margin: 0; }

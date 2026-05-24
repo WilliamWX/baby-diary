@@ -1,7 +1,7 @@
 import request from './index'
 
-export function getPostList(page = 1, size = 10, category = '') {
-  return request.get(`/post/?page=${page}&size=${size}&category=${category}`)
+export function getPostList(page = 1, size = 10, category = '', sort = '') {
+  return request.get(`/post/?page=${page}&size=${size}&category=${category}&sort=${sort}`)
 }
 
 export function getPostDetail(id) {
@@ -34,6 +34,10 @@ export function deletePost(id) {
 
 export function toggleBookmark(targetType, targetId) {
   return request.post('/interact/bookmark', { targetType, targetId })
+}
+
+export function getInteractStatus(targetType, targetId) {
+  return request.get(`/interact/status/${targetType}/${targetId}`)
 }
 
 export function toggleFollow(userId) {

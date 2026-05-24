@@ -37,13 +37,14 @@ public class VideoMomentController {
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) Long babyId,
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String sort,
             Authentication auth) {
-        return videoMomentService.list(page, size, babyId, keyword);
+        return videoMomentService.list(page, size, babyId, keyword, sort, (Long) auth.getPrincipal());
     }
 
     @GetMapping("/{id}")
-    public Result<VideoMomentVO> detail(@PathVariable Long id) {
-        return videoMomentService.detail(id);
+    public Result<VideoMomentVO> detail(@PathVariable Long id, Authentication auth) {
+        return videoMomentService.detail(id, (Long) auth.getPrincipal());
     }
 
     @PutMapping("/{id}")
@@ -63,6 +64,13 @@ public class VideoMomentController {
             String url = fileService.upload(transcoded, "video", "video/mp4");
             Map<String, String> data = new HashMap<>();
             data.put("url", url);
+
+            // Auto-generate cover from first frame
+            java.io.File cover = videoTranscodeService.extractCover(transcoded);
+            if (cover != null) {
+                String coverUrl = fileService.upload(cover, "video", "image/jpeg");
+                data.put("coverUrl", coverUrl);
+            }
             return Result.ok(data);
         } catch (Exception e) {
             return Result.error("视频上传失败: " + e.getMessage());

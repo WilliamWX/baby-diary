@@ -152,6 +152,37 @@ public class InteractService {
         }).collect(Collectors.toList());
     }
 
+    public Map<String, Boolean> getUserStatus(Long userId, String targetType, Long targetId) {
+        boolean liked = likeRecordMapper.selectCount(new LambdaQueryWrapper<LikeRecord>()
+                .eq(LikeRecord::getUserId, userId)
+                .eq(LikeRecord::getTargetType, targetType)
+                .eq(LikeRecord::getTargetId, targetId)) > 0;
+        boolean bookmarked = bookmarkMapper.selectCount(new LambdaQueryWrapper<Bookmark>()
+                .eq(Bookmark::getUserId, userId)
+                .eq(Bookmark::getTargetType, targetType)
+                .eq(Bookmark::getTargetId, targetId)) > 0;
+        Map<String, Boolean> status = new HashMap<>();
+        status.put("liked", liked);
+        status.put("bookmarked", bookmarked);
+        return status;
+    }
+
+    public boolean isLiked(Long userId, String targetType, Long targetId) {
+        if (userId == null) return false;
+        return likeRecordMapper.selectCount(new LambdaQueryWrapper<LikeRecord>()
+                .eq(LikeRecord::getUserId, userId)
+                .eq(LikeRecord::getTargetType, targetType)
+                .eq(LikeRecord::getTargetId, targetId)) > 0;
+    }
+
+    public boolean isBookmarked(Long userId, String targetType, Long targetId) {
+        if (userId == null) return false;
+        return bookmarkMapper.selectCount(new LambdaQueryWrapper<Bookmark>()
+                .eq(Bookmark::getUserId, userId)
+                .eq(Bookmark::getTargetType, targetType)
+                .eq(Bookmark::getTargetId, targetId)) > 0;
+    }
+
     public long likeCount(String targetType, Long targetId) {
         return likeRecordMapper.selectCount(new LambdaQueryWrapper<LikeRecord>()
                 .eq(LikeRecord::getTargetType, targetType)
