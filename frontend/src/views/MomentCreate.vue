@@ -5,6 +5,7 @@ import { ElMessage } from 'element-plus'
 import { createMoment, uploadVideo } from '../api/moment'
 import { getBabyList } from '../api/baby'
 import { BASE_URL } from '../utils/config'
+import FriendPicker from '../components/FriendPicker.vue'
 
 const router = useRouter()
 const baseUrl = BASE_URL
@@ -13,7 +14,9 @@ const form = ref({
   description: '',
   babyId: null,
   videoUrl: '',
-  coverUrl: ''
+  coverUrl: '',
+  visibility: 1,
+  visibleTo: ''
 })
 
 const videoFile = ref(null)
@@ -25,6 +28,22 @@ const submitting = ref(false)
 const babies = ref([])
 
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024
+const friendPickerVisible = ref(false)
+const selectedFriendIds = ref([])
+
+function onVisibilityChange(val) {
+  if (val === 3) {
+    friendPickerVisible.value = true
+  } else {
+    selectedFriendIds.value = []
+    form.value.visibleTo = ''
+  }
+}
+
+function onFriendConfirm(ids) {
+  selectedFriendIds.value = ids
+  form.value.visibleTo = ids.join(',')
+}
 
 async function loadBabies() {
   try {
@@ -161,18 +180,35 @@ loadBabies()
           </el-select>
         </el-form-item>
 
+        <!-- Visibility -->
+        <el-form-item label="可见性">
+          <el-radio-group v-model="form.visibility" @change="onVisibilityChange">
+            <el-radio :value="1">所有人</el-radio>
+            <el-radio :value="2">全部好友</el-radio>
+            <el-radio :value="3">部分好友</el-radio>
+            <el-radio :value="0">个人私密</el-radio>
+          </el-radio-group>
+          <div v-if="form.visibility === 3" class="friend-tags">
+            <el-button size="small" @click="friendPickerVisible = true">
+              选择好友 (已选{{ selectedFriendIds.length }}人)
+            </el-button>
+          </div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" :loading="submitting" @click="handleSubmit">发布</el-button>
           <el-button @click="router.back()">取消</el-button>
         </el-form-item>
       </el-form>
     </el-card>
+    <FriendPicker v-model="selectedFriendIds" v-model:visible="friendPickerVisible" @update:model-value="onFriendConfirm" />
   </div>
 </template>
 
 <style scoped>
 .moment-create { max-width: 720px; margin: 0 auto; padding: 20px 0; }
 .page-title { color: #ff6b81; margin-bottom: 24px; font-size: 22px; }
+.friend-tags { margin-top: 8px; }
 
 .video-upload-area { width: 100%; }
 .video-preview { position: relative; }

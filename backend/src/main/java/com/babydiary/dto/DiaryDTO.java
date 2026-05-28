@@ -10,6 +10,7 @@ public class DiaryDTO {
     private String content;
     private Long babyId;
     private Integer visibility;
+    private String visibleTo;
     private LocalDate recordDate;
     private List<String> images;
 }

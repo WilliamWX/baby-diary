@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { createDiary, uploadImage } from '../api/diary'
 import { BASE_URL } from '../utils/config'
+import FriendPicker from '../components/FriendPicker.vue'
 
 const router = useRouter()
 const baseUrl = BASE_URL
@@ -13,12 +14,29 @@ const today = new Date().toISOString().slice(0, 10)
 const form = ref({
   content: '',
   visibility: 1,
+  visibleTo: '',
   recordDate: today
 })
 const MAX_IMAGES = 9
 const images = ref([])
 const uploading = ref(false)
 const submitting = ref(false)
+const friendPickerVisible = ref(false)
+const selectedFriendIds = ref([])
+
+function onVisibilityChange(val) {
+  if (val === 3) {
+    friendPickerVisible.value = true
+  } else {
+    selectedFriendIds.value = []
+    form.value.visibleTo = ''
+  }
+}
+
+function onFriendConfirm(ids) {
+  selectedFriendIds.value = ids
+  form.value.visibleTo = ids.join(',')
+}
 
 async function handleUpload(file) {
   if (images.value.length >= MAX_IMAGES) {
@@ -69,10 +87,17 @@ async function handleSubmit() {
             style="width: 100%" />
         </el-form-item>
         <el-form-item label="可见性">
-          <el-radio-group v-model="form.visibility">
-            <el-radio :value="1">公开</el-radio>
-            <el-radio :value="0">私密</el-radio>
+          <el-radio-group v-model="form.visibility" @change="onVisibilityChange">
+            <el-radio :value="1">所有人</el-radio>
+            <el-radio :value="2">全部好友</el-radio>
+            <el-radio :value="3">部分好友</el-radio>
+            <el-radio :value="0">个人私密</el-radio>
           </el-radio-group>
+          <div v-if="form.visibility === 3" class="friend-tags">
+            <el-button size="small" @click="friendPickerVisible = true">
+              选择好友 (已选{{ selectedFriendIds.length }}人)
+            </el-button>
+          </div>
         </el-form-item>
         <el-form-item label="内容">
           <el-input
@@ -109,6 +134,7 @@ async function handleSubmit() {
         </el-form-item>
       </el-form>
     </el-card>
+    <FriendPicker v-model="selectedFriendIds" v-model:visible="friendPickerVisible" @update:model-value="onFriendConfirm" />
   </div>
 </template>
 
@@ -167,4 +193,5 @@ async function handleSubmit() {
   border-color: #ff6b81;
   color: #ff6b81;
 }
+.friend-tags { margin-top: 8px; }
 </style>

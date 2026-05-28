@@ -8,4 +8,6 @@ public class AiDoctorDTO {
     @NotBlank(message = "问题不能为空")
     private String question;
     private boolean anonymous;
+    private Integer visibility;
+    private String visibleTo;
 }

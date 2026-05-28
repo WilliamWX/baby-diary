@@ -36,10 +36,11 @@ public class VideoMomentController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(required = false) Long babyId,
+            @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sort,
             Authentication auth) {
-        return videoMomentService.list(page, size, babyId, keyword, sort, (Long) auth.getPrincipal());
+        return videoMomentService.list(page, size, babyId, authorId, keyword, sort, (Long) auth.getPrincipal());
     }
 
     @GetMapping("/{id}")

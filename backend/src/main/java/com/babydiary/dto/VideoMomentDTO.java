@@ -8,4 +8,6 @@ public class VideoMomentDTO {
     private Long babyId;
     private String videoUrl;
     private String coverUrl;
+    private Integer visibility;
+    private String visibleTo;
 }

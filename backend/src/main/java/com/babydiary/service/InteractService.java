@@ -22,6 +22,7 @@ public class InteractService {
     private final DiaryMapper diaryMapper;
     private final PostMapper postMapper;
     private final VideoMomentMapper videoMomentMapper;
+    private final DiaryImageMapper diaryImageMapper;
     private final NotificationService notificationService;
 
     // 点赞/取消点赞
@@ -209,6 +210,66 @@ public class InteractService {
             return moment != null ? moment.getUserId() : null;
         }
         return null;
+    }
+
+    public List<Map<String, Object>> getLikedItems(Long userId) {
+        List<LikeRecord> likes = likeRecordMapper.selectList(
+                new LambdaQueryWrapper<LikeRecord>().eq(LikeRecord::getUserId, userId)
+                        .orderByDesc(LikeRecord::getCreatedAt));
+        return likes.stream().map(l -> enrichItem(l.getTargetType(), l.getTargetId(), userId)).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    public List<Map<String, Object>> getBookmarkedItems(Long userId) {
+        List<Bookmark> bookmarks = bookmarkMapper.selectList(
+                new LambdaQueryWrapper<Bookmark>().eq(Bookmark::getUserId, userId)
+                        .orderByDesc(Bookmark::getCreatedAt));
+        return bookmarks.stream().map(b -> enrichItem(b.getTargetType(), b.getTargetId(), userId)).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    private Map<String, Object> enrichItem(String targetType, Long targetId, Long userId) {
+        Map<String, Object> item = new HashMap<>();
+        item.put("type", targetType);
+        if ("diary".equals(targetType)) {
+            Diary d = diaryMapper.selectById(targetId);
+            if (d == null) return null;
+            item.put("id", d.getId());
+            item.put("content", d.getContent());
+            item.put("createdAt", d.getCreatedAt());
+            User u = userMapper.selectById(d.getUserId());
+            item.put("authorName", u != null ? u.getUsername() : "未知");
+            item.put("authorAvatar", u != null ? u.getAvatar() : null);
+            item.put("likeCount", (int) likeCount("diary", d.getId()));
+            item.put("commentCount", (int) commentCount("diary", d.getId()));
+            List<String> images = diaryImageMapper.selectList(
+                    new LambdaQueryWrapper<DiaryImage>().eq(DiaryImage::getDiaryId, d.getId()).orderByAsc(DiaryImage::getSort)
+            ).stream().map(DiaryImage::getUrl).collect(Collectors.toList());
+            item.put("coverUrl", !images.isEmpty() ? images.get(0) : null);
+        } else if ("post".equals(targetType)) {
+            Post p = postMapper.selectById(targetId);
+            if (p == null) return null;
+            item.put("id", p.getId());
+            item.put("content", p.getTitle());
+            item.put("createdAt", p.getCreatedAt());
+            User u = userMapper.selectById(p.getUserId());
+            item.put("authorName", u != null ? u.getUsername() : "未知");
+            item.put("authorAvatar", u != null ? u.getAvatar() : null);
+            item.put("likeCount", (int) likeCount("post", p.getId()));
+            item.put("commentCount", (int) commentCount("post", p.getId()));
+            item.put("coverUrl", null);
+        } else if ("moment".equals(targetType)) {
+            VideoMoment m = videoMomentMapper.selectById(targetId);
+            if (m == null) return null;
+            item.put("id", m.getId());
+            item.put("content", m.getDescription());
+            item.put("createdAt", m.getCreatedAt());
+            User u = userMapper.selectById(m.getUserId());
+            item.put("authorName", u != null ? u.getUsername() : "未知");
+            item.put("authorAvatar", u != null ? u.getAvatar() : null);
+            item.put("likeCount", (int) likeCount("moment", m.getId()));
+            item.put("commentCount", (int) commentCount("moment", m.getId()));
+            item.put("coverUrl", m.getCoverUrl());
+        }
+        return item;
     }
 
     private String getTargetLabel(String targetType) {

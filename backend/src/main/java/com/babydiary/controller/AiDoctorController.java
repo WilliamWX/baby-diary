@@ -10,6 +10,7 @@ import com.babydiary.entity.User;
 import com.babydiary.mapper.AiChatHistoryMapper;
 import com.babydiary.mapper.UserMapper;
 import com.babydiary.service.DeepSeekService;
+import com.babydiary.service.FriendService;
 import com.babydiary.service.InteractService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class AiDoctorController {
     private final UserMapper userMapper;
     private final AiChatHistoryMapper aiChatHistoryMapper;
     private final InteractService interactService;
+    private final FriendService friendService;
 
     @PostMapping("/ask")
     public Result<Map<String, Object>> ask(@Valid @RequestBody AiDoctorDTO dto, Authentication auth) {
@@ -40,6 +42,8 @@ public class AiDoctorController {
         history.setQuestion(dto.getQuestion());
         history.setAnswer(answer);
         history.setAnonymous(dto.isAnonymous() ? 1 : 0);
+        history.setVisibility(dto.getVisibility() != null ? dto.getVisibility() : 1);
+        history.setVisibleTo(dto.getVisibleTo());
         aiChatHistoryMapper.insert(history);
 
         Map<String, Object> data = new HashMap<>();
@@ -74,6 +78,7 @@ public class AiDoctorController {
         List<AiChatHistory> all = aiChatHistoryMapper.selectList(
                 new LambdaQueryWrapper<AiChatHistory>()
                         .eq(AiChatHistory::getAnonymous, 0)
+                        .eq(AiChatHistory::getVisibility, 1)
                         .orderByDesc(AiChatHistory::getCreatedAt)
         );
         AiChatHistory topChat = null;

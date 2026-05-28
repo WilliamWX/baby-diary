@@ -14,7 +14,13 @@ public class UserVO {
     private String avatar;
     private String bio;
     private int diaryCount;
-    private int followerCount;
-    private int followingCount;
+    private int momentCount;
+    private int postCount;
+    private int aiChatCount;
+    private int likeCount;
+    private int bookmarkCount;
+    private int friendCount;
+    private boolean isFriend;
+    private Integer friendStatus;
     private LocalDateTime createdAt;
 }

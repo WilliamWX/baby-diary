@@ -15,6 +15,7 @@ public class Diary {
     private Long babyId;
     private String content;
     private Integer visibility;
+    private String visibleTo;
     private Integer viewCount;
     private LocalDate recordDate;
     @TableField(fill = FieldFill.INSERT)

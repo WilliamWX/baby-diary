@@ -37,12 +37,13 @@ public class UserController {
     @GetMapping("/profile")
     public Result<UserVO> profile(Authentication auth) {
         Long userId = (Long) auth.getPrincipal();
-        return userService.getProfile(userId);
+        return userService.getProfile(userId, userId);
     }
 
     @GetMapping("/profile/{id}")
-    public Result<UserVO> userProfile(@PathVariable Long id) {
-        return userService.getProfile(id);
+    public Result<UserVO> userProfile(@PathVariable Long id, Authentication auth) {
+        Long viewerId = auth != null ? (Long) auth.getPrincipal() : null;
+        return userService.getProfile(id, viewerId);
     }
 
     @PostMapping("/avatar")

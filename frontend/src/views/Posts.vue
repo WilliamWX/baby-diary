@@ -99,7 +99,7 @@ onMounted(fetchPosts)
 <template>
   <div class="posts-page">
     <div class="page-header">
-      <h2>经验分享广场</h2>
+      <h2>经验</h2>
       <el-button type="primary" @click="router.push('/post/create')">发布经验</el-button>
     </div>
     <div class="categories">

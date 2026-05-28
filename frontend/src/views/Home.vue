@@ -17,7 +17,7 @@ const featuredPost = ref(null)
 const featuredMoment = ref(null)
 const featuredAi = ref(null)
 
-const stats = ref({ diaryCount: 0, followerCount: 0, followingCount: 0 })
+const stats = ref({ diaryCount: 0, likeCount: 0, bookmarkCount: 0 })
 const baseUrl = BASE_URL
 
 async function fetchStats() {
@@ -26,8 +26,8 @@ async function fetchStats() {
     if (auth.user) {
       stats.value = {
         diaryCount: auth.user.diaryCount || 0,
-        followerCount: auth.user.followerCount || 0,
-        followingCount: auth.user.followingCount || 0
+        likeCount: auth.user.likeCount || 0,
+        bookmarkCount: auth.user.bookmarkCount || 0
       }
     }
   } catch (e) { /* ignored */ }
@@ -36,9 +36,9 @@ async function fetchStats() {
 async function fetchFeatured() {
   try {
     const [dr, pr, mr, ar] = await Promise.all([
-      getDiaryList(1, 1, null, 'popular'),
+      getDiaryList(1, 1, null, null, 'popular'),
       getPostList(1, 1, '', 'popular'),
-      getMomentList(1, 1, null, 'popular'),
+      getMomentList(1, 1, null, null, 'popular'),
       getTopChat()
     ])
     featuredDiary.value = dr.data.records?.[0] || null
@@ -63,20 +63,6 @@ onMounted(() => {
         <div class="banner-text">
           <h1>养娃宝</h1>
           <p>记录宝宝每一个成长瞬间</p>
-        </div>
-      </div>
-      <div class="stats-row">
-        <div class="stat-item" @click="router.push('/profile')">
-          <span class="stat-num">{{ stats.diaryCount }}</span>
-          <span class="stat-label">日记</span>
-        </div>
-        <div class="stat-item" @click="router.push('/profile')">
-          <span class="stat-num">{{ stats.followerCount }}</span>
-          <span class="stat-label">粉丝</span>
-        </div>
-        <div class="stat-item" @click="router.push('/profile')">
-          <span class="stat-num">{{ stats.followingCount }}</span>
-          <span class="stat-label">关注</span>
         </div>
       </div>
     </div>
@@ -128,7 +114,7 @@ onMounted(() => {
 
         <!-- Featured AI -->
         <el-card v-if="featuredAi" class="featured-card" shadow="hover" @click="router.push('/ai-doctor')">
-          <div class="featured-tag"><el-tag size="small" type="success">AI 医生</el-tag></div>
+          <div class="featured-tag"><el-tag size="small" type="success">AI 医生问答</el-tag></div>
           <p class="featured-text">Q: {{ featuredAi.question?.slice(0, 60) }}</p>
           <p class="featured-answer">{{ featuredAi.answer?.slice(0, 60) }}</p>
           <div class="featured-meta">

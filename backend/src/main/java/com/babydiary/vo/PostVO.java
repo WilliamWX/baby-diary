@@ -20,5 +20,6 @@ public class PostVO {
     private Integer commentCount;
     private Boolean liked;
     private Boolean bookmarked;
+    private Integer visibility;
     private LocalDateTime createdAt;
 }

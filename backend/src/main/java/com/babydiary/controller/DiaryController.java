@@ -34,10 +34,11 @@ public class DiaryController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long babyId,
+            @RequestParam(required = false) Long authorId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String sort,
             Authentication auth) {
-        return diaryService.list(page, size, (Long) auth.getPrincipal(), babyId, keyword, sort);
+        return diaryService.list(page, size, (Long) auth.getPrincipal(), babyId, authorId, keyword, sort);
     }
 
     @GetMapping("/{id}")

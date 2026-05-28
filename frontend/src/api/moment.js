@@ -1,8 +1,9 @@
 import request from './index'
 
-export function getMomentList(page = 1, size = 12, babyId = null, sort = '') {
+export function getMomentList(page = 1, size = 12, babyId = null, authorId = null, sort = '') {
   let url = `/moment/?page=${page}&size=${size}&sort=${sort}`
   if (babyId) url += `&babyId=${babyId}`
+  if (authorId) url += `&authorId=${authorId}`
   return request.get(url)
 }
 

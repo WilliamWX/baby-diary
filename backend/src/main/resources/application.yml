@@ -33,6 +33,6 @@ minio:
   bucket: baby-diary
 
 deepseek:
-  api-key: sk-your-api-key-here
+  api-key: sk-2bcf664b8207499bb8b340a7afe2fc46
   base-url: https://api.deepseek.com
   model: deepseek-chat

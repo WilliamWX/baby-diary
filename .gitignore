@@ -19,6 +19,9 @@ Thumbs.db
 frontend/node_modules/
 frontend/dist/
 
+# Generated static
+backend/src/main/resources/static/
+
 # Environment
 .env
 .env.local

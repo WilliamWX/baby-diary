@@ -1,7 +1,9 @@
 import request from './index'
 
-export function getPostList(page = 1, size = 10, category = '', sort = '') {
-  return request.get(`/post/?page=${page}&size=${size}&category=${category}&sort=${sort}`)
+export function getPostList(page = 1, size = 10, category = '', sort = '', authorId = null) {
+  let url = `/post/?page=${page}&size=${size}&category=${category}&sort=${sort}`
+  if (authorId) url += `&authorId=${authorId}`
+  return request.get(url)
 }
 
 export function getPostDetail(id) {
@@ -42,4 +44,12 @@ export function getInteractStatus(targetType, targetId) {
 
 export function toggleFollow(userId) {
   return request.post(`/interact/follow/${userId}`)
+}
+
+export function getLikedItems() {
+  return request.get('/interact/liked-items')
+}
+
+export function getBookmarkedItems() {
+  return request.get('/interact/bookmarked-items')
 }

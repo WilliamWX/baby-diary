@@ -15,6 +15,8 @@ public class Post {
     private String content;
     private String category;
     private Integer viewCount;
+    private Integer visibility;
+    private String visibleTo;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
     @TableField(fill = FieldFill.INSERT_UPDATE)

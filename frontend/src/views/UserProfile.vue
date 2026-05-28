@@ -4,12 +4,14 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import request from '../api'
 import { toggleFollow } from '../api/post'
+import { addFriend } from '../api/friend'
 import { BASE_URL } from '../utils/config'
 
 const route = useRoute()
 const baseUrl = BASE_URL
 const profile = ref(null)
 const loading = ref(true)
+const addingFriend = ref(false)
 
 onMounted(async () => {
   try {
@@ -28,6 +30,16 @@ async function handleFollow() {
     ElMessage.success('操作成功')
   } catch (e) { /* ignored */ }
 }
+
+async function handleAddFriend() {
+  addingFriend.value = true
+  try {
+    await addFriend(profile.value.id)
+    ElMessage.success('好友申请已发送')
+    profile.value.friendStatus = 0
+  } catch (e) { /* ignored */ }
+  finally { addingFriend.value = false }
+}
 </script>
 
 <template>
@@ -40,10 +52,18 @@ async function handleFollow() {
           <p class="bio">{{ profile.bio || '这个人很懒，什么都没写...' }}</p>
           <span class="join">加入于 {{ profile.createdAt?.slice(0, 10) }}</span>
         </div>
-        <el-button type="primary" @click="handleFollow">关注</el-button>
+        <div class="action-buttons">
+          <el-button v-if="!profile.isFriend && profile.friendStatus !== 0" type="primary" :loading="addingFriend" @click="handleAddFriend">
+            添加好友
+          </el-button>
+          <el-tag v-else-if="profile.friendStatus === 0" type="warning">已发送申请</el-tag>
+          <el-tag v-else type="success">已添加好友</el-tag>
+          <el-button @click="handleFollow">关注</el-button>
+        </div>
       </div>
       <div class="stats">
         <div class="stat"><span class="num">{{ profile.diaryCount || 0 }}</span><span>日记</span></div>
+        <div class="stat"><span class="num">{{ profile.friendCount || 0 }}</span><span>好友</span></div>
         <div class="stat"><span class="num">{{ profile.followerCount || 0 }}</span><span>粉丝</span></div>
         <div class="stat"><span class="num">{{ profile.followingCount || 0 }}</span><span>关注</span></div>
       </div>
@@ -57,7 +77,8 @@ async function handleFollow() {
 .info h2 { font-size: 22px; margin-bottom: 6px; }
 .bio { color: #666; }
 .join { font-size: 13px; color: #999; }
-.stats { display: flex; gap: 40px; padding-top: 16px; border-top: 1px solid #eee; }
+.action-buttons { display: flex; gap: 8px; }
+.stats { display: flex; gap: 40px; padding-top: 16px; border-top: 1px solid #eee; flex-wrap: wrap; }
 .stat { display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .stat .num { font-size: 20px; font-weight: bold; color: #ff6b81; }
 .stat span:last-child { font-size: 13px; color: #999; }

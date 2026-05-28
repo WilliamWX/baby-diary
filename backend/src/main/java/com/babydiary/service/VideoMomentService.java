@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,6 +28,7 @@ public class VideoMomentService {
     private final UserMapper userMapper;
     private final BabyMapper babyMapper;
     private final InteractService interactService;
+    private final FriendService friendService;
 
     @Transactional
     public Result<VideoMoment> create(VideoMomentDTO dto, Long userId) {
@@ -40,15 +41,21 @@ public class VideoMomentService {
         m.setDescription(dto.getDescription());
         m.setVideoUrl(dto.getVideoUrl());
         m.setCoverUrl(dto.getCoverUrl());
+        m.setVisibility(dto.getVisibility() != null ? dto.getVisibility() : 1);
+        m.setVisibleTo(dto.getVisibleTo());
         m.setViewCount(0);
         videoMomentMapper.insert(m);
         return Result.ok(m);
     }
 
-    public Result<PageResult<VideoMomentVO>> list(int page, int size, Long babyId, String keyword, String sort, Long userId) {
+    public Result<PageResult<VideoMomentVO>> list(int page, int size, Long babyId, Long authorId, String keyword, String sort, Long userId) {
         LambdaQueryWrapper<VideoMoment> wrapper = new LambdaQueryWrapper<VideoMoment>();
+        applyVisibilityFilter(wrapper, userId);
         if (babyId != null) {
             wrapper.eq(VideoMoment::getBabyId, babyId);
+        }
+        if (authorId != null) {
+            wrapper.eq(VideoMoment::getUserId, authorId);
         }
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(VideoMoment::getDescription, keyword);
@@ -81,6 +88,9 @@ public class VideoMomentService {
     public Result<VideoMomentVO> detail(Long id, Long userId) {
         VideoMoment m = videoMomentMapper.selectById(id);
         if (m == null) return Result.error("精彩时刻不存在");
+        if (!canView(m.getUserId(), m.getVisibility(), m.getVisibleTo(), userId)) {
+            return Result.error(403, "无权访问");
+        }
         m.setViewCount(m.getViewCount() + 1);
         videoMomentMapper.updateById(m);
         return Result.ok(toVO(m, userId));
@@ -93,6 +103,10 @@ public class VideoMomentService {
         if (!m.getUserId().equals(userId)) return Result.error(403, "无权操作");
         m.setDescription(dto.getDescription());
         m.setBabyId(dto.getBabyId());
+        if (dto.getVisibility() != null) {
+            m.setVisibility(dto.getVisibility());
+            m.setVisibleTo(dto.getVisibleTo());
+        }
         if (dto.getVideoUrl() != null) {
             m.setVideoUrl(dto.getVideoUrl());
         }
@@ -134,7 +148,33 @@ public class VideoMomentService {
                 .commentCount((int) interactService.commentCount("moment", m.getId()))
                 .liked(interactService.isLiked(userId, "moment", m.getId()))
                 .bookmarked(interactService.isBookmarked(userId, "moment", m.getId()))
+                .visibility(m.getVisibility())
                 .createdAt(m.getCreatedAt())
                 .build();
+    }
+
+    private void applyVisibilityFilter(LambdaQueryWrapper<VideoMoment> wrapper, Long viewerId) {
+        Set<Long> friendIds = friendService.getFriendIds(viewerId);
+        if (friendIds.isEmpty()) {
+            wrapper.and(w -> w.eq(VideoMoment::getUserId, viewerId)
+                    .or().eq(VideoMoment::getVisibility, 1)
+                    .or().apply("FIND_IN_SET({0}, visible_to) > 0", viewerId.toString()));
+        } else {
+            wrapper.and(w -> w.eq(VideoMoment::getUserId, viewerId)
+                    .or().eq(VideoMoment::getVisibility, 1)
+                    .or(w2 -> w2.eq(VideoMoment::getVisibility, 2).in(VideoMoment::getUserId, friendIds))
+                    .or().apply("FIND_IN_SET({0}, visible_to) > 0", viewerId.toString()));
+        }
+    }
+
+    private boolean canView(Long authorId, Integer visibility, String visibleTo, Long viewerId) {
+        if (authorId.equals(viewerId)) return true;
+        if (visibility == null || visibility == 1) return true;
+        if (visibility == 0) return false;
+        if (visibility == 2) return friendService.isFriend(viewerId, authorId);
+        if (visibility == 3 && visibleTo != null) {
+            return Arrays.stream(visibleTo.split(",")).anyMatch(id -> id.equals(viewerId.toString()));
+        }
+        return false;
     }
 }

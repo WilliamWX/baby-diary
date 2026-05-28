@@ -16,6 +16,8 @@ public class VideoMoment {
     private String videoUrl;
     private String coverUrl;
     private Integer viewCount;
+    private Integer visibility;
+    private String visibleTo;
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
     @TableField(fill = FieldFill.INSERT_UPDATE)

@@ -25,6 +25,8 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/user/register", "/api/v1/user/login", "/error").permitAll()
+                .requestMatchers("/", "/index.html", "/favicon.svg", "/icons.svg", "/assets/**", "/baby-diary/**").permitAll()
+                .requestMatchers("/login", "/register", "/profile", "/diary/**", "/post/**", "/posts", "/moment/**", "/moments", "/ai-doctor", "/moment/create", "/post/create").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterAfter(jwtAuthFilter, SecurityContextHolderFilter.class);

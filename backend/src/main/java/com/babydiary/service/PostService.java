@@ -25,6 +25,7 @@ public class PostService {
     private final BookmarkMapper bookmarkMapper;
     private final FollowMapper followMapper;
     private final InteractService interactService;
+    private final FriendService friendService;
 
     public Result<Post> create(Post post, Long userId) {
         post.setUserId(userId);
@@ -32,10 +33,14 @@ public class PostService {
         return Result.ok(post);
     }
 
-    public Result<PageResult<PostVO>> list(int page, int size, String category, String keyword, String sort, Long userId) {
+    public Result<PageResult<PostVO>> list(int page, int size, String category, Long authorId, String keyword, String sort, Long userId) {
         LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
+        applyVisibilityFilter(wrapper, userId);
         if (category != null && !category.isEmpty()) {
             wrapper.eq(Post::getCategory, category);
+        }
+        if (authorId != null) {
+            wrapper.eq(Post::getUserId, authorId);
         }
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.and(w -> w.like(Post::getTitle, keyword).or().like(Post::getContent, keyword));
@@ -69,6 +74,9 @@ public class PostService {
     public Result<PostVO> detail(Long id, Long userId) {
         Post post = postMapper.selectById(id);
         if (post == null) return Result.error("帖子不存在");
+        if (!canView(post.getUserId(), post.getVisibility(), post.getVisibleTo(), userId)) {
+            return Result.error(403, "无权访问");
+        }
         post.setViewCount(post.getViewCount() + 1);
         postMapper.updateById(post);
         return Result.ok(toVO(post, userId));
@@ -81,6 +89,10 @@ public class PostService {
         post.setTitle(updated.getTitle());
         post.setContent(updated.getContent());
         post.setCategory(updated.getCategory());
+        if (updated.getVisibility() != null) {
+            post.setVisibility(updated.getVisibility());
+            post.setVisibleTo(updated.getVisibleTo());
+        }
         postMapper.updateById(post);
         return Result.ok(post);
     }
@@ -91,6 +103,31 @@ public class PostService {
         if (!post.getUserId().equals(userId)) return Result.error(403, "无权操作");
         postMapper.deleteById(id);
         return Result.ok("删除成功");
+    }
+
+    private void applyVisibilityFilter(LambdaQueryWrapper<Post> wrapper, Long viewerId) {
+        Set<Long> friendIds = friendService.getFriendIds(viewerId);
+        if (friendIds.isEmpty()) {
+            wrapper.and(w -> w.eq(Post::getUserId, viewerId)
+                    .or().eq(Post::getVisibility, 1)
+                    .or().apply("FIND_IN_SET({0}, visible_to) > 0", viewerId.toString()));
+        } else {
+            wrapper.and(w -> w.eq(Post::getUserId, viewerId)
+                    .or().eq(Post::getVisibility, 1)
+                    .or(w2 -> w2.eq(Post::getVisibility, 2).in(Post::getUserId, friendIds))
+                    .or().apply("FIND_IN_SET({0}, visible_to) > 0", viewerId.toString()));
+        }
+    }
+
+    private boolean canView(Long authorId, Integer visibility, String visibleTo, Long viewerId) {
+        if (authorId.equals(viewerId)) return true;
+        if (visibility == null || visibility == 1) return true;
+        if (visibility == 0) return false;
+        if (visibility == 2) return friendService.isFriend(viewerId, authorId);
+        if (visibility == 3 && visibleTo != null) {
+            return Arrays.stream(visibleTo.split(",")).anyMatch(id -> id.equals(viewerId.toString()));
+        }
+        return false;
     }
 
     private PostVO toVO(Post post, Long userId) {
@@ -108,6 +145,7 @@ public class PostService {
                 .commentCount((int) interactService.commentCount("post", post.getId()))
                 .liked(interactService.isLiked(userId, "post", post.getId()))
                 .bookmarked(interactService.isBookmarked(userId, "post", post.getId()))
+                .visibility(post.getVisibility())
                 .createdAt(post.getCreatedAt())
                 .build();
     }

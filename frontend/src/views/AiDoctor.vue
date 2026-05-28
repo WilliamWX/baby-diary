@@ -3,10 +3,30 @@ import { ref, nextTick, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { askDoctor, getHistory } from '../api/aidoctor'
 
+import FriendPicker from '../components/FriendPicker.vue'
+
 const question = ref('')
 const loading = ref(false)
 const chatList = ref([])
 const chatEnd = ref(null)
+const visibility = ref(1)
+const visibleTo = ref('')
+const friendPickerVisible = ref(false)
+const selectedFriendIds = ref([])
+
+function onVisibilityChange(val) {
+  if (val === 3) {
+    friendPickerVisible.value = true
+  } else {
+    selectedFriendIds.value = []
+    visibleTo.value = ''
+  }
+}
+
+function onFriendConfirm(ids) {
+  selectedFriendIds.value = ids
+  visibleTo.value = ids.join(',')
+}
 
 // history
 const historyList = ref([])
@@ -26,7 +46,7 @@ async function handleAsk(anonymous) {
   const displayQuestion = q
   question.value = ''
   try {
-    const res = await askDoctor({ question: displayQuestion, anonymous })
+    const res = await askDoctor({ question: displayQuestion, anonymous, visibility: visibility.value, visibleTo: visibleTo.value })
     chatList.value.push(res.data)
     scrollBottom()
   } catch (e) {
@@ -80,7 +100,7 @@ onMounted(() => {
       <!-- Chat Panel -->
       <div class="chat-panel">
         <div class="chat-header">
-          <h2>AI 医生</h2>
+          <h2>AI 医生问答</h2>
           <p class="desc">儿科育儿问题随时问</p>
         </div>
 
@@ -93,7 +113,7 @@ onMounted(() => {
               <div class="q-text">{{ item.question }}</div>
             </div>
             <div class="answer-bubble">
-              <div class="a-label">AI 医生</div>
+              <div class="a-label">AI 医生问答</div>
               <div class="a-text">{{ item.answer }}</div>
             </div>
           </div>
@@ -101,6 +121,18 @@ onMounted(() => {
         </div>
 
         <div class="chat-input">
+          <div class="visibility-row">
+            <span class="vis-label">可见性：</span>
+            <el-radio-group v-model="visibility" size="small" @change="onVisibilityChange">
+              <el-radio :value="1">所有人</el-radio>
+              <el-radio :value="2">全部好友</el-radio>
+              <el-radio :value="3">部分好友</el-radio>
+              <el-radio :value="0">个人私密</el-radio>
+            </el-radio-group>
+            <el-button v-if="visibility === 3" size="small" text type="primary" @click="friendPickerVisible = true">
+              选择好友 (已选{{ selectedFriendIds.length }}人)
+            </el-button>
+          </div>
           <el-input
             v-model="question"
             type="textarea"
@@ -119,6 +151,7 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    <FriendPicker v-model="selectedFriendIds" v-model:visible="friendPickerVisible" @update:model-value="onFriendConfirm" />
   </div>
 </template>
 
@@ -246,6 +279,14 @@ onMounted(() => {
   padding: 16px 0;
   border-top: 1px solid #eee;
 }
+.visibility-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.vis-label { font-size: 13px; color: #666; }
 .btn-row {
   display: flex;
   gap: 12px;

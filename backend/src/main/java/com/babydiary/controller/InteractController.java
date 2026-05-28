@@ -58,4 +58,14 @@ public class InteractController {
     public Result<List<Map<String, Object>>> following(Authentication auth) {
         return interactService.getFollowing((Long) auth.getPrincipal());
     }
+
+    @GetMapping("/liked-items")
+    public Result<List<Map<String, Object>>> likedItems(Authentication auth) {
+        return Result.ok(interactService.getLikedItems((Long) auth.getPrincipal()));
+    }
+
+    @GetMapping("/bookmarked-items")
+    public Result<List<Map<String, Object>>> bookmarkedItems(Authentication auth) {
+        return Result.ok(interactService.getBookmarkedItems((Long) auth.getPrincipal()));
+    }
 }

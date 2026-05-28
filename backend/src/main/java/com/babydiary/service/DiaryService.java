@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+import java.util.*;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
 
@@ -26,6 +26,7 @@ public class DiaryService {
     private final UserMapper userMapper;
     private final BabyMapper babyMapper;
     private final InteractService interactService;
+    private final FriendService friendService;
 
     @Transactional
     public Result<Diary> create(DiaryDTO dto, Long userId) {
@@ -34,6 +35,7 @@ public class DiaryService {
         diary.setBabyId(dto.getBabyId());
         diary.setContent(dto.getContent());
         diary.setVisibility(dto.getVisibility() != null ? dto.getVisibility() : 1);
+        diary.setVisibleTo(dto.getVisibleTo());
         diary.setRecordDate(dto.getRecordDate() != null ? dto.getRecordDate() : LocalDate.now());
         diaryMapper.insert(diary);
 
@@ -52,11 +54,14 @@ public class DiaryService {
         return Result.ok(diary);
     }
 
-    public Result<PageResult<DiaryVO>> list(int page, int size, Long userId, Long babyId, String keyword, String sort) {
-        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>()
-                .eq(Diary::getVisibility, 1);
+    public Result<PageResult<DiaryVO>> list(int page, int size, Long userId, Long babyId, Long authorId, String keyword, String sort) {
+        LambdaQueryWrapper<Diary> wrapper = new LambdaQueryWrapper<Diary>();
+        applyVisibilityFilter(wrapper, userId);
         if (babyId != null) {
             wrapper.eq(Diary::getBabyId, babyId);
+        }
+        if (authorId != null) {
+            wrapper.eq(Diary::getUserId, authorId);
         }
         if (keyword != null && !keyword.isEmpty()) {
             wrapper.like(Diary::getContent, keyword);
@@ -91,7 +96,7 @@ public class DiaryService {
         if (diary == null) {
             return Result.error("日记不存在");
         }
-        if (diary.getVisibility() != null && diary.getVisibility() == 0 && !diary.getUserId().equals(userId)) {
+        if (!canView(diary.getUserId(), diary.getVisibility(), diary.getVisibleTo(), userId)) {
             return Result.error(403, "无权访问");
         }
         diary.setViewCount(diary.getViewCount() + 1);
@@ -111,6 +116,7 @@ public class DiaryService {
         diary.setContent(dto.getContent());
         diary.setBabyId(dto.getBabyId());
         diary.setVisibility(dto.getVisibility() != null ? dto.getVisibility() : 1);
+        diary.setVisibleTo(dto.getVisibleTo());
         diary.setRecordDate(dto.getRecordDate() != null ? dto.getRecordDate() : diary.getRecordDate());
         diaryMapper.updateById(diary);
 
@@ -142,6 +148,31 @@ public class DiaryService {
         diaryImageMapper.delete(new LambdaQueryWrapper<DiaryImage>().eq(DiaryImage::getDiaryId, id));
         diaryMapper.deleteById(id);
         return Result.ok("删除成功");
+    }
+
+    private void applyVisibilityFilter(LambdaQueryWrapper<Diary> wrapper, Long viewerId) {
+        Set<Long> friendIds = friendService.getFriendIds(viewerId);
+        if (friendIds.isEmpty()) {
+            wrapper.and(w -> w.eq(Diary::getUserId, viewerId)
+                    .or().eq(Diary::getVisibility, 1)
+                    .or().apply("FIND_IN_SET({0}, visible_to) > 0", viewerId.toString()));
+        } else {
+            wrapper.and(w -> w.eq(Diary::getUserId, viewerId)
+                    .or().eq(Diary::getVisibility, 1)
+                    .or(w2 -> w2.eq(Diary::getVisibility, 2).in(Diary::getUserId, friendIds))
+                    .or().apply("FIND_IN_SET({0}, visible_to) > 0", viewerId.toString()));
+        }
+    }
+
+    private boolean canView(Long authorId, Integer visibility, String visibleTo, Long viewerId) {
+        if (authorId.equals(viewerId)) return true;
+        if (visibility == null || visibility == 1) return true;
+        if (visibility == 0) return false;
+        if (visibility == 2) return friendService.isFriend(viewerId, authorId);
+        if (visibility == 3 && visibleTo != null) {
+            return Arrays.stream(visibleTo.split(",")).anyMatch(id -> id.equals(viewerId.toString()));
+        }
+        return false;
     }
 
     private DiaryVO toVO(Diary diary, Long userId) {

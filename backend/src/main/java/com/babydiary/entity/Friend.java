@@ -6,15 +6,12 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("ai_chat_history")
-public class AiChatHistory {
+@TableName("friend")
+public class Friend {
     @TableId(type = IdType.AUTO)
     private Long id;
     private Long userId;
-    private String question;
-    private String answer;
-    private Integer anonymous;
-    private Integer visibility;
-    private String visibleTo;
+    private Long friendId;
+    private Integer status;
     private LocalDateTime createdAt;
 }
