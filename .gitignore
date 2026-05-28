@@ -22,6 +22,14 @@ frontend/dist/
 # Generated static
 backend/src/main/resources/static/
 
+# Local tools
+config.ini
+natapp.exe
+ngrok.exe
+start-all.bat
+start-all.vbs
+start-natapp.vbs
+
 # Environment
 .env
 .env.local
